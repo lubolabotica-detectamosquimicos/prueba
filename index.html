@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="description" content="LuBo La Botica — Detecta químicos nocivos en ingredientes de productos de uso cotidiano">
+<meta name="theme-color" content="#2d5a1b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="LuBo La Botica">
+<title>LuBo La Botica — Detector de químicos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green-50:#f2f7ed;--green-100:#e0eed4;--green-200:#c5dea0;--green-400:#82b84a;
+  --green-600:#3b6d11;--green-800:#1e3d07;
+  --amber-50:#fef8ec;--amber-200:#fac775;--amber-400:#ef9f27;--amber-600:#854f0b;
+  --red-50:#fdf2f2;--red-200:#f7c1c1;--red-400:#e24b4a;--red-600:#a32d2d;
+  --gray-50:#f8f7f4;--gray-100:#f0ede8;--gray-200:#ddd9d0;--gray-400:#9e9b94;
+  --gray-600:#5a5751;--gray-800:#2c2a26;
+  --bg:#fafaf8;--surface:#ffffff;--border:rgba(0,0,0,0.08);--border-med:rgba(0,0,0,0.13);
+  --text:#1a1916;--text-2:#5a5751;--text-3:#9e9b94;
+  --accent:#3b6d11;--accent-light:#e0eed4;
+  --r-sm:8px;--r-md:12px;--r-lg:18px;
+  --font-body:'DM Sans',system-ui,sans-serif;
+  --font-disp:'DM Serif Display',Georgia,serif;
+  --sh-sm:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{font-size:16px}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh}
+
+.site-header{background:var(--surface);border-bottom:1px solid var(--border);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--sh-sm)}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{width:34px;height:34px;border-radius:9px;background:var(--green-800);display:flex;align-items:center;justify-content:center;font-size:17px}
+.logo-text{display:flex;flex-direction:column;line-height:1.15}
+.logo-lubo{font-family:var(--font-disp);font-size:16px;color:var(--text)}
+.logo-lubo span{color:var(--accent)}
+.logo-sub{font-size:10px;color:var(--text-3);font-weight:300;letter-spacing:.06em;text-transform:uppercase}
+.header-link{font-size:11px;color:var(--accent);text-decoration:none;border:1px solid var(--green-200);border-radius:20px;padding:4px 10px;display:flex;align-items:center;gap:4px;font-weight:500;transition:background .15s}
+.header-link:hover{background:var(--accent-light)}
+
+.api-banner{background:var(--amber-50);border-bottom:1px solid var(--amber-200);padding:9px 18px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--amber-600);flex-wrap:wrap}
+.api-banner input{flex:1;min-width:160px;padding:5px 9px;font-size:12px;border:1px solid var(--amber-200);border-radius:var(--r-sm);font-family:var(--font-body);background:white;color:var(--text)}
+.api-banner button{padding:5px 12px;font-size:12px;background:var(--amber-400);color:white;border:none;border-radius:var(--r-sm);cursor:pointer;font-weight:500;white-space:nowrap}
+.api-banner.ok{background:var(--green-50);border-color:var(--green-200);color:var(--green-600)}
+.api-banner.hidden{display:none}
+
+.nav-tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 10px;gap:2px;overflow-x:auto;scrollbar-width:none}
+.nav-tabs::-webkit-scrollbar{display:none}
+.nav-tab{flex:1;min-width:70px;padding:11px 6px 9px;font-size:12px;font-weight:400;color:var(--text-3);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:5px;transition:color .15s;font-family:var(--font-body)}
+.nav-tab svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;flex-shrink:0}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+.nav-tab:hover:not(.active){color:var(--text-2);background:var(--gray-50)}
+
+.main{max-width:680px;margin:0 auto;padding:16px 14px 80px}
+.section{display:none}.section.active{display:block}
+
+.search-wrap{position:relative;margin-bottom:11px}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;stroke:var(--text-3);fill:none;stroke-width:2;pointer-events:none}
+.search-input{width:100%;padding:10px 12px 10px 36px;font-size:14px;border:1px solid var(--border-med);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-family:var(--font-body);transition:border-color .15s,box-shadow .15s}
+.search-input:focus{outline:none;border-color:var(--green-400);box-shadow:0 0 0 3px rgba(59,109,17,.08)}
+.search-input::placeholder{color:var(--text-3)}
+
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px}
+.chip{padding:4px 11px;border-radius:20px;border:1px solid var(--border-med);font-size:11px;cursor:pointer;color:var(--text-2);background:var(--surface);transition:all .15s;font-family:var(--font-body);white-space:nowrap}
+.chip.active{background:var(--accent);color:white;border-color:var(--accent)}
+.chip:hover:not(.active){background:var(--gray-50)}
+
+.legend{display:flex;gap:13px;margin-bottom:11px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-3)}
+.leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+.result-list{display:flex;flex-direction:column;gap:6px}
+.q-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:11px 13px;display:flex;align-items:flex-start;gap:9px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.q-card:hover{border-color:var(--green-200);box-shadow:var(--sh-sm)}
+.q-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.q-body{flex:1;min-width:0}
+.q-name{font-size:13px;font-weight:500;color:var(--text)}
+.q-meta{font-size:11px;color:var(--text-3);margin-top:2px}
+.q-risk{font-size:11px;color:var(--text-2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{display:inline-block;padding:1px 7px;border-radius:6px;font-size:10px;margin-left:5px;vertical-align:middle;font-weight:500}
+.badge-r{background:var(--red-50);color:var(--red-600)}
+.badge-a{background:var(--amber-50);color:var(--amber-600)}
+.badge-v{background:var(--green-50);color:var(--green-600)}
+.nbar{height:3px;border-radius:2px;background:var(--gray-100);margin-top:5px;overflow:hidden}
+.nfill{height:100%;border-radius:2px}
+
+.detail-view{display:none}.detail-view.open{display:block}
+.detail-back{display:flex;align-items:center;gap:7px;margin-bottom:14px;background:none;border:none;cursor:pointer;color:var(--text-2);font-size:13px;font-family:var(--font-body);padding:0}
+.detail-back svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
+.detail-back:hover{color:var(--text)}
+.detail-title{font-family:var(--font-disp);font-size:20px;color:var(--text);line-height:1.2;margin-bottom:14px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:13px}
+.detail-metric{background:var(--gray-50);border-radius:var(--r-sm);padding:10px 12px}
+.dml{font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em}
+.dmv{font-size:17px;font-weight:500;color:var(--text);margin-top:2px}
+.detail-row{padding:9px 0;border-bottom:1px solid var(--border)}
+.detail-row:last-child{border-bottom:none}
+.dlabel{font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.dval{font-size:13px;color:var(--text);line-height:1.5}
+.nbar-lg{height:6px;border-radius:3px;background:var(--gray-100);margin-bottom:13px;overflow:hidden}
+
+.cam-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden}
+.cam-toolbar{display:flex;gap:7px;padding:11px 13px;border-bottom:1px solid var(--border);background:var(--gray-50)}
+.cam-btn{flex:1;padding:8px 9px;border:1px solid var(--border-med);border-radius:var(--r-sm);background:var(--surface);cursor:pointer;font-size:12px;color:var(--text-2);display:flex;align-items:center;justify-content:center;gap:5px;font-family:var(--font-body);font-weight:500;transition:all .15s}
+.cam-btn:hover{background:var(--gray-50)}
+.cam-btn.primary{background:var(--accent);color:white;border-color:var(--accent)}
+.cam-btn.primary:hover{background:var(--green-800)}
+.cam-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+#vid-wrap{display:none;position:relative;background:#000}
+#vid-wrap video{width:100%;display:block;max-height:280px;object-fit:cover}
+#cap-btn{position:absolute;bottom:13px;left:50%;transform:translateX(-50%);width:52px;height:52px;border-radius:50%;background:white;border:3px solid rgba(255,255,255,.6);cursor:pointer;font-size:21px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+#prev-wrap{display:none}
+#prev-img{width:100%;max-height:280px;object-fit:contain;display:block;background:var(--gray-100)}
+.prev-actions{padding:9px 13px;border-top:1px solid var(--border);display:flex;gap:7px;background:var(--gray-50)}
+.cam-body{padding:14px}
+.placeholder{text-align:center;padding:2.5rem 1rem;color:var(--text-3)}
+.placeholder svg{width:38px;height:38px;stroke:currentColor;fill:none;stroke-width:1.5;display:block;margin:0 auto 9px;opacity:.35}
+.placeholder p{font-size:13px;line-height:1.5}
+.placeholder small{font-size:11px;margin-top:5px;display:block}
+.ares-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:9px}
+.finds{display:flex;flex-direction:column;gap:6px}
+.fi{display:flex;align-items:flex-start;gap:8px;padding:9px 11px;border-radius:var(--r-sm)}
+.fi-r{background:var(--red-50)}.fi-a{background:var(--amber-50)}.fi-v{background:var(--green-50)}.fi-n{background:var(--gray-50)}
+.fi-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.fi-body{font-size:12px}
+.fi-name{font-weight:500;color:var(--text)}
+.fi-risk{color:var(--text-3);margin-top:2px;font-size:11px}
+
+.prod-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:15px;margin-bottom:13px}
+.form-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:13px;display:flex;align-items:center;gap:7px}
+.form-title svg{width:15px;height:15px;stroke:var(--accent);fill:none;stroke-width:2}
+.form-row{margin-bottom:9px}
+.form-label{font-size:10px;color:var(--text-3);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.04em}
+.form-row input,.form-row select,.form-row textarea{width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--border-med);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font-family:var(--font-body);transition:border-color .15s}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:none;border-color:var(--green-400)}
+.form-row textarea{min-height:65px;resize:vertical}
+.form-2col{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.btn-save{width:100%;padding:10px;background:var(--accent);color:white;border:none;border-radius:var(--r-sm);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font-body);transition:background .15s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-save:hover{background:var(--green-800)}
+.btn-save svg{width:14px;height:14px;stroke:white;fill:none;stroke-width:2}
+.prod-list{display:flex;flex-direction:column;gap:7px}
+.prod-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:11px 13px}
+.prod-header{display:flex;align-items:center;gap:9px;margin-bottom:5px}
+.prod-sem{width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.ps-r{background:var(--red-50)}.ps-a{background:var(--amber-50)}.ps-v{background:var(--green-50)}
+.prod-name{font-size:13px;font-weight:500;color:var(--text)}
+.prod-cat{font-size:10px;color:var(--text-3)}
+.prod-ing{font-size:11px;color:var(--text-3);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prod-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+.prod-tag{padding:2px 7px;border-radius:6px;font-size:10px}
+.del-btn{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-3);padding:3px}
+.del-btn:hover{color:var(--red-400)}
+.del-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:1.2rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:11px 8px;text-align:center;box-shadow:var(--sh-sm)}
+.stat-num{font-size:25px;font-weight:500;font-family:var(--font-disp)}
+.stat-lbl{font-size:10px;color:var(--text-3);margin-top:2px}
+.group-block{margin-bottom:.9rem}
+.group-title{font-size:12px;font-weight:500;color:var(--text);margin-bottom:6px}
+.group-chips{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px}
+.group-bar{height:5px;border-radius:3px;background:var(--gray-100);overflow:hidden;display:flex}
+
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--text-3)}
+.empty svg{width:34px;height:34px;stroke:currentColor;fill:none;stroke-width:1.5;display:block;margin:0 auto 9px;opacity:.3}
+.empty p{font-size:13px}
+
+.site-footer{text-align:center;padding:1.75rem 1rem;font-size:11px;color:var(--text-3);border-top:1px solid var(--border);margin-top:1.5rem}
+.site-footer a{color:var(--accent);text-decoration:none}
+
+.install-banner{background:var(--green-50);border-bottom:1px solid var(--green-200);padding:9px 18px;display:none;align-items:center;gap:9px;font-size:12px;color:var(--green-600)}
+.install-banner button{padding:5px 12px;font-size:11px;background:var(--accent);color:white;border:none;border-radius:20px;cursor:pointer}
+.install-banner .ci{background:none;color:var(--text-3);padding:2px 6px}
+
+.lds{display:inline-flex;gap:4px}
+.lds span{width:5px;height:5px;border-radius:50%;background:var(--text-3);animation:bnc 1.2s infinite}
+.lds span:nth-child(2){animation-delay:.2s}.lds span:nth-child(3){animation-delay:.4s}
+@keyframes bnc{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+
+@media(max-width:480px){
+  .form-2col{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .detail-grid{grid-template-columns:1fr}
+  .logo-sub{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="install-banner" id="ib">
+  📲 Instala LuBo La Botica en tu pantalla de inicio
+  <button id="btn-install">Instalar</button>
+  <button class="ci" id="close-install">✕</button>
+</div>
+
+<div class="api-banner" id="api-banner">
+  <span>🔑 Para analizar fotos de etiquetas, ingresa tu API Key de Anthropic:</span>
+  <input type="password" id="api-key-input" placeholder="sk-ant-...">
+  <button onclick="saveKey()">Guardar</button>
+</div>
+
+<header class="site-header">
+  <a href="https://lubo_labotica.com" class="logo">
+    <div class="logo-icon">🌿</div>
+    <div class="logo-text">
+      <div class="logo-lubo">LuBo <span>La Botica</span></div>
+      <div class="logo-sub">Detector de químicos</div>
+    </div>
+  </a>
+  <a href="https://lubo_labotica.com" class="header-link">
+    <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    lubo_labotica.com
+  </a>
+</header>
+
+<nav class="nav-tabs">
+  <button class="nav-tab active" onclick="go('buscar')">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Buscar
+  </button>
+  <button class="nav-tab" onclick="go('camara')">
+    <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Escanear
+  </button>
+  <button class="nav-tab" onclick="go('productos')">
+    <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Productos
+  </button>
+  <button class="nav-tab" onclick="go('resumen')">
+    <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>Resumen
+  </button>
+</nav>
+
+<main class="main">
+
+  <div id="sec-buscar" class="section active">
+    <div id="list-view">
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search-input" type="text" placeholder="Buscar ingrediente o producto..." id="si" oninput="filtrar()">
+      </div>
+      <div class="chips">
+        <button class="chip active" onclick="sf('todos',this)">Todos</button>
+        <button class="chip" onclick="sf('Alimentos',this)">🍎 Alimentos</button>
+        <button class="chip" onclick="sf('Cosmética',this)">💧 Cosmética</button>
+        <button class="chip" onclick="sf('Ambos',this)">🔄 Ambos</button>
+        <button class="chip" onclick="sf('rojo',this)">🔴 Peligroso</button>
+        <button class="chip" onclick="sf('amarillo',this)">🟡 Precaución</button>
+        <button class="chip" onclick="sf('verde',this)">🟢 Limpio</button>
+      </div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#e24b4a"></div>&gt;30% peligroso</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#ef9f27"></div>1–30% precaución</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#639922"></div>0% limpio</div>
+      </div>
+      <div class="result-list" id="rl"></div>
+    </div>
+    <div id="dv" class="detail-view">
+      <button class="detail-back" onclick="cerrar()">
+        <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>Volver
+      </button>
+      <div id="dc"></div>
+    </div>
+  </div>
+
+  <div id="sec-camara" class="section">
+    <p style="font-size:13px;color:var(--text-2);margin-bottom:12px;line-height:1.6">Fotografía la lista de ingredientes de cualquier producto. La IA lee el texto y detecta los químicos de la base de datos.</p>
+    <div class="cam-card">
+      <div class="cam-toolbar">
+        <button class="cam-btn" id="btn-cam" onclick="toggleCam()">
+          <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Cámara
+        </button>
+        <button class="cam-btn" onclick="document.getElementById('fi').click()">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>Galería / Foto
+        </button>
+        <input type="file" id="fi" accept="image/*" style="display:none" onchange="loadImg(event)">
+      </div>
+      <div id="vid-wrap"><video id="vid" autoplay playsinline muted></video><button id="cap-btn" onclick="capturar()">📷</button></div>
+      <div id="prev-wrap">
+        <img id="prev-img" alt="Etiqueta">
+        <div class="prev-actions">
+          <button class="cam-btn primary" style="flex:2" id="btn-ai" onclick="analizarImg()">
+            <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 8v4l3 3"/></svg>Analizar con IA
+          </button>
+          <button class="cam-btn" style="flex:1" onclick="resetCam()">
+            <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.03-5.39"/></svg>Nueva
+          </button>
+        </div>
+      </div>
+      <div class="cam-body" id="cb">
+        <div class="placeholder">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="m9 9 2 2 4-4"/></svg>
+          <p>Toma una foto o sube una imagen de los ingredientes</p>
+          <small>La IA leerá el texto y detectará los químicos de la base de datos LuBo</small>
+        </div>
+      </div>
+    </div>
+    <canvas id="cnv" style="display:none"></canvas>
+  </div>
+
+  <div id="sec-productos" class="section">
+    <div class="prod-form">
+      <div class="form-title">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Registrar producto
+      </div>
+      <div class="form-row"><label class="form-label">Nombre del producto *</label><input type="text" id="pn" placeholder="Ej: Shampoo Dove Original"></div>
+      <div class="form-2col">
+        <div class="form-row"><label class="form-label">Categoría</label><select id="pc"><option>Cosmética</option><option>Alimentos</option><option>Limpieza</option><option>Otro</option></select></div>
+        <div class="form-row"><label class="form-label">Marca</label><input type="text" id="pm" placeholder="Dove, Nestlé..."></div>
+      </div>
+      <div class="form-row"><label class="form-label">Ingredientes (pega la etiqueta) *</label><textarea id="ping" placeholder="Agua, Sodium Laureth Sulfate, Parfum, Methylparaben..."></textarea></div>
+      <button class="btn-save" onclick="guardar()">
+        <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+        Guardar y clasificar
+      </button>
+    </div>
+    <div id="pl" class="prod-list"></div>
+  </div>
+
+  <div id="sec-resumen" class="section">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num">47</div><div class="stat-lbl">Base de datos</div></div>
+      <div class="stat-card"><div class="stat-num" id="sr" style="color:#e24b4a">0</div><div class="stat-lbl">🔴 Peligrosos</div></div>
+      <div class="stat-card"><div class="stat-num" id="sa" style="color:#ef9f27">0</div><div class="stat-lbl">🟡 Precaución</div></div>
+      <div class="stat-card"><div class="stat-num" id="sv" style="color:#639922">0</div><div class="stat-lbl">🟢 Limpios</div></div>
+    </div>
+    <div id="rc"></div>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  <p>🌿 LuBo La Botica &middot; <a href="https://lubo_labotica.com">lubo_labotica.com</a></p>
+  <p style="margin-top:4px">47 ingredientes evaluados &middot; Fase 2 activa</p>
+</footer>
+
+<script>
+const DB_RAW=[{"nombre":"Bromato de potasio","uso":"Alimentos","riesgo":"Sin información","nocividad":90,"productos":"Pan industrial, harinas mejoradas"},{"nombre":"Nitratos y nitritos","uso":"Alimentos","riesgo":"Precursores de nitrosaminas cancerígenas","nocividad":90,"productos":"Embutidos, tocino, jamón"},{"nombre":"Aceites parcialmente hidrogenados","uso":"Alimentos","riesgo":"Grasas trans, cardiotóxicas","nocividad":90,"productos":"Galletas, pasteles industriales"},{"nombre":"BHA / BHT","uso":"Alimentos","riesgo":"Posible carcinógeno y disruptor endocrino","nocividad":85,"productos":"Snacks, cereales, galletas"},{"nombre":"Bisfenol A (BPA)","uso":"Alimentos","riesgo":"Disruptor endocrino","nocividad":85,"productos":"Latas de alimentos, botellas plásticas"},{"nombre":"Aluminio (sales)","uso":"Alimentos","riesgo":"Acumulación neurotóxica","nocividad":80,"productos":"Quesos fundidos, polvo de hornear"},{"nombre":"Tartrazina","uso":"Alimentos","riesgo":"Sin información","nocividad":75,"productos":"Golosinas, refrescos, cereales"},{"nombre":"Colorantes artificiales (Amarillo 5, Azul 1, Rojo 40)","uso":"Alimentos","riesgo":"Asociados a hiperactividad y alergias","nocividad":75,"productos":"Bebidas, dulces, cereales"},{"nombre":"Perclorato","uso":"Alimentos","riesgo":"Afecta tiroides y desarrollo fetal","nocividad":75,"productos":"Agua potable contaminada, alimentos agrícolas"},{"nombre":"Glutamato monosódico","uso":"Alimentos","riesgo":"Sin información","nocividad":70,"productos":"Sopas instantáneas, snacks, comida rápida"},{"nombre":"Eritrosina (Rojo N°3)","uso":"Alimentos","riesgo":"Sin información","nocividad":70,"productos":"Caramelos, cerezas en conserva"},{"nombre":"Jarabe de maíz de alta fructosa","uso":"Alimentos","riesgo":"Inflamación, hígado graso no alcohólico","nocividad":70,"productos":"Refrescos, cereales, aderezos"},{"nombre":"Azúcar","uso":"Alimentos","riesgo":"Sin información","nocividad":65,"productos":"Bebidas azucaradas, dulces, cereales"},{"nombre":"Propionato","uso":"Alimentos","riesgo":"Sin información","nocividad":60,"productos":"Pan de molde, pasteles empaquetados"},{"nombre":"Carragenina","uso":"Alimentos","riesgo":"Sin información","nocividad":60,"productos":"Leches vegetales, postres veganos"},{"nombre":"Compuestos perfluorados (PFOA, PFOS)","uso":"Ambos","riesgo":"Bioacumulables, afectan tiroides","nocividad":85,"productos":"Sartenes antiadherentes, maquillaje"},{"nombre":"Cloro y triclorometano","uso":"Ambos","riesgo":"Tóxicos hepáticos","nocividad":75,"productos":"Agua potable tratada"},{"nombre":"Benzoato de sodio","uso":"Ambos","riesgo":"Sin información","nocividad":60,"productos":"Bebidas, jugos, aderezos"},{"nombre":"Propylene glycol","uso":"Ambos","riesgo":"Sin información","nocividad":60,"productos":"Hidratantes, productos para el cabello"},{"nombre":"Peroxido de Benzoilo","uso":"Ambos","riesgo":"Sin información","nocividad":null,"productos":""},{"nombre":"Plomo","uso":"Cosmética","riesgo":"Sin información","nocividad":95,"productos":"Maquillaje, tintes, labiales"},{"nombre":"Mercurio","uso":"Cosmética","riesgo":"Sin información","nocividad":95,"productos":"Cremas aclarantes ilegales, algunos cosméticos"},{"nombre":"Formaldehido","uso":"Cosmética","riesgo":"Sin información","nocividad":90,"productos":"Esmaltes, alisadores de cabello, textiles"},{"nombre":"Ftalatos","uso":"Cosmética","riesgo":"Sin información","nocividad":85,"productos":"Perfumes, esmaltes, plásticos"},{"nombre":"Alquitrán de hulla","uso":"Cosmética","riesgo":"Cancerígeno probable, irritante","nocividad":85,"productos":"Champús anticaspa, tintes para cabello"},{"nombre":"Tolueno","uso":"Cosmética","riesgo":"Neurotóxico, afecta desarrollo fetal","nocividad":85,"productos":"Removedores de esmalte, tintes"},{"nombre":"Dioxano (1,4-dioxane)","uso":"Cosmética","riesgo":"Cancerígeno probable","nocividad":85,"productos":"Champús, jabones líquidos"},{"nombre":"Triclosán","uso":"Cosmética","riesgo":"Sin información","nocividad":80,"productos":"Pastas dentales, jabones antibacteriales"},{"nombre":"Aluminio (clorhidrato)","uso":"Cosmética","riesgo":"Posible neurotóxico","nocividad":80,"productos":"Antitranspirantes"},{"nombre":"DEA/TEA/MEA","uso":"Cosmética","riesgo":"Disruptores hormonales, posibles carcinógenos","nocividad":80,"productos":"Champús, jabones líquidos, cremas"},{"nombre":"Etanolaminas (MEA, TEA, DEA)","uso":"Cosmética","riesgo":"Carcinógeno potencial","nocividad":80,"productos":"Limpiadores, cremas de afeitar"},{"nombre":"Resorcinol","uso":"Cosmética","riesgo":"Sin información","nocividad":75,"productos":"Tintes para el cabello"},{"nombre":"Parfum","uso":"Cosmética","riesgo":"Sin información","nocividad":75,"productos":"Perfumes, desodorantes, cremas"},{"nombre":"Oxibenzona y avobenzona","uso":"Cosmética","riesgo":"Disruptores hormonales, alergias","nocividad":75,"productos":"Protectores solares"},{"nombre":"Metilparabeno","uso":"Cosmética","riesgo":"Sin información","nocividad":70,"productos":"Cremas, lociones, desodorantes"},{"nombre":"Propilparabeno","uso":"Cosmética","riesgo":"Sin información","nocividad":70,"productos":"Shampoo, acondicionadores"},{"nombre":"Bencilparabeno","uso":"Cosmética","riesgo":"Sin información","nocividad":70,"productos":"Maquillaje, productos faciales"},{"nombre":"Etilparabeno","uso":"Cosmética","riesgo":"Sin información","nocividad":70,"productos":"Desodorantes, protectores solares"},{"nombre":"Butilparabeno","uso":"Cosmética","riesgo":"Sin información","nocividad":70,"productos":"Productos anti-envejecimiento"},{"nombre":"Microplásticos (polietileno, nylon)","uso":"Cosmética","riesgo":"Contaminación ambiental y dérmica","nocividad":70,"productos":"Exfoliantes, pastas dentales"},{"nombre":"Laurate sulphate","uso":"Cosmética","riesgo":"Sin información","nocividad":65,"productos":"Jabones, pastas dentales, champús"},{"nombre":"Siliconas PEG/PPG","uso":"Cosmética","riesgo":"Sin información","nocividad":60,"productos":"Shampoo, maquillaje, cremas"},{"nombre":"Paraffinum","uso":"Cosmética","riesgo":"Sin información","nocividad":55,"productos":"Bálsamos, cremas hidratantes"},{"nombre":"Sodium","uso":"Cosmética","riesgo":"Sin información","nocividad":50,"productos":"Shampoo, jabones líquidos"},{"nombre":"Ammonium","uso":"Cosmética","riesgo":"Sin información","nocividad":50,"productos":"Champús, limpiadores faciales"},{"nombre":"Siliconas","uso":"Cosmética","riesgo":"Sin información","nocividad":50,"productos":"Maquillaje, bases, sueros capilares"},{"nombre":"Diacetileno","uso":"vaper","riesgo":"Sin información","nocividad":null,"productos":"vapers"}];
+function sem(n){if(n===null)return'amarillo';if(n>30)return'rojo';if(n>=1)return'amarillo';return'verde';}
+const DB=DB_RAW.map(q=>({...q,semaforo:sem(q.nocividad)}));
+const CM={rojo:'#e24b4a',amarillo:'#ef9f27',verde:'#639922'};
+let FA='todos',vids=null;
+let prods=[];try{prods=JSON.parse(localStorage.getItem('lubo_prods')||'[]');}catch(e){}
+let apiKey=localStorage.getItem('lubo_api_key')||'';
+
+function updateBanner(){
+  const b=document.getElementById('api-banner');
+  if(apiKey){b.className='api-banner ok';b.innerHTML='✅ API Key configurada — el análisis por foto está activo. <button onclick="clearKey()" style="background:none;border:none;color:var(--amber-600);cursor:pointer;font-size:11px;text-decoration:underline;font-family:var(--font-body)">Cambiar</button>';}
+}
+function saveKey(){const k=document.getElementById('api-key-input').value.trim();if(!k)return;apiKey=k;localStorage.setItem('lubo_api_key',k);updateBanner();}
+function clearKey(){apiKey='';localStorage.removeItem('lubo_api_key');document.getElementById('api-banner').className='api-banner';document.getElementById('api-banner').innerHTML='<span>🔑 Para analizar fotos de etiquetas, ingresa tu API Key de Anthropic:</span><input type="password" id="api-key-input" placeholder="sk-ant-..."><button onclick="saveKey()">Guardar</button>';}
+updateBanner();
+
+function go(t){
+  document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
+  document.getElementById('sec-'+t).classList.add('active');
+  ['buscar','camara','productos','resumen'].forEach((x,i)=>{if(x===t)document.querySelectorAll('.nav-tab')[i].classList.add('active');});
+  if(t!=='camara')stopCam();
+  if(t==='resumen')initRes();
+  if(t==='productos')renderP();
+}
+function sf(f,b){FA=f;document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));b.classList.add('active');filtrar();}
+function filtrar(){
+  const q=document.getElementById('si').value.toLowerCase();
+  renderL(DB.filter(i=>(i.nombre.toLowerCase().includes(q)||i.productos.toLowerCase().includes(q))&&(FA==='todos'||i.uso===FA||i.semaforo===FA)));
+}
+function renderL(it){
+  const l=document.getElementById('rl');
+  if(!it.length){l.innerHTML='<div class="empty"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg><p>Sin resultados para esta búsqueda</p></div>';return;}
+  l.innerHTML=it.map(q=>`<div class="q-card" onclick="det('${q.nombre.replace(/'/g,"\\'")}')">
+    <div class="q-dot" style="background:${CM[q.semaforo]}"></div>
+    <div class="q-body">
+      <div class="q-name">${q.nombre}<span class="badge badge-${q.semaforo[0]}">${q.semaforo==='rojo'?'⚠ Peligroso':q.semaforo==='amarillo'?'⚡ Precaución':'✓ Limpio'}</span></div>
+      <div class="q-meta">${q.uso}${q.nocividad!==null?' · '+q.nocividad+'%':''}</div>
+      ${q.riesgo!=='Sin información'?`<div class="q-risk">${q.riesgo}</div>`:''}
+      ${q.nocividad!==null?`<div class="nbar"><div class="nfill" style="width:${q.nocividad}%;background:${CM[q.semaforo]}"></div></div>`:''}
+    </div></div>`).join('');
+}
+function det(n){
+  const q=DB.find(x=>x.nombre===n);if(!q)return;
+  document.getElementById('list-view').style.display='none';
+  document.getElementById('dv').classList.add('open');
+  const lbl=q.semaforo==='rojo'?'⚠ Peligroso — evitar':q.semaforo==='amarillo'?'⚡ Precaución — uso moderado':'✓ Limpio — bajo riesgo';
+  document.getElementById('dc').innerHTML=`
+    <div class="detail-title">${q.nombre}</div>
+    <div class="detail-grid">
+      <div class="detail-metric"><div class="dml">Categoría</div><div class="dmv" style="font-size:14px">${q.uso}</div></div>
+      <div class="detail-metric"><div class="dml">Nocividad</div><div class="dmv" style="color:${CM[q.semaforo]}">${q.nocividad!==null?q.nocividad+'%':'Sin dato'}</div></div>
+    </div>
+    ${q.nocividad!==null?`<div class="nbar-lg"><div class="nfill" style="width:${q.nocividad}%;background:${CM[q.semaforo]}"></div></div>`:''}
+    <div class="detail-row"><div class="dlabel">Clasificación</div><div class="dval">${lbl}</div></div>
+    <div class="detail-row"><div class="dlabel">Riesgo funcional</div><div class="dval">${q.riesgo}</div></div>
+    <div class="detail-row"><div class="dlabel">Se encuentra en</div><div class="dval">${q.productos||'—'}</div></div>`;
+}
+function cerrar(){document.getElementById('list-view').style.display='';document.getElementById('dv').classList.remove('open');}
+
+async function toggleCam(){
+  if(vids){stopCam();return;}
+  try{
+    vids=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    document.getElementById('vid').srcObject=vids;
+    document.getElementById('vid-wrap').style.display='block';
+    document.getElementById('btn-cam').innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34"/></svg> Detener';
+  }catch(e){alert('No se pudo acceder a la cámara. Usa "Galería / Foto" para subir una imagen.');}
+}
+function stopCam(){if(vids){vids.getTracks().forEach(t=>t.stop());vids=null;}document.getElementById('vid-wrap').style.display='none';document.getElementById('btn-cam').innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Cámara';}
+function capturar(){const v=document.getElementById('vid'),c=document.getElementById('cnv');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);showPrev(c.toDataURL('image/jpeg',.85));stopCam();}
+function loadImg(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>showPrev(ev.target.result);r.readAsDataURL(f);e.target.value='';}
+function showPrev(url){document.getElementById('prev-img').src=url;document.getElementById('prev-wrap').style.display='block';document.getElementById('vid-wrap').style.display='none';document.getElementById('cb').innerHTML='';}
+function resetCam(){document.getElementById('prev-wrap').style.display='none';document.getElementById('cb').innerHTML='<div class="placeholder"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="m9 9 2 2 4-4"/></svg><p>Toma una foto o sube una imagen de los ingredientes</p><small>La IA leerá el texto y detectará los químicos de la base de datos LuBo</small></div>';}
+async function analizarImg(){
+  if(!apiKey){alert('Ingresa tu API Key de Anthropic en el banner superior para usar esta función.');return;}
+  const img=document.getElementById('prev-img'),btn=document.getElementById('btn-ai');
+  btn.disabled=true;btn.innerHTML='<span class="lds"><span></span><span></span><span></span></span> Analizando...';
+  document.getElementById('cb').innerHTML='<div style="text-align:center;padding:2rem;color:var(--text-3)"><span class="lds"><span></span><span></span><span></span></span><div style="margin-top:10px;font-size:12px">La IA está leyendo la etiqueta...</div></div>';
+  try{
+    const b64=img.src.split(',')[1];
+    const names=DB.map(q=>q.nombre).join(', ');
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},{type:'text',text:`Lee esta etiqueta de ingredientes. Extrae todos los ingredientes visibles. Compara con esta lista de químicos nocivos: ${names}. Responde SOLO JSON sin markdown ni texto extra: {"ingredientes":["lista completa"],"coincidencias":["solo los nombres exactos de la lista que coincidan"]}`}]}]})});
+    const d=await res.json();
+    const txt=d.content.map(i=>i.text||'').join('');
+    mostrarRes(JSON.parse(txt.replace(/```json|```/g,'').trim()));
+  }catch(e){document.getElementById('cb').innerHTML='<div style="padding:1rem;color:var(--text-2);font-size:13px;line-height:1.6">No se pudo analizar la imagen. Asegúrate de que la foto sea clara y los ingredientes sean legibles.</div>';}
+  btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:white;fill:none;stroke-width:2"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 8v4l3 3"/></svg> Analizar con IA';
+}
+function mostrarRes(p){
+  const coins=(p.coincidencias||[]).map(n=>DB.find(q=>q.nombre===n||q.nombre.toLowerCase().includes(n.toLowerCase()))).filter(Boolean);
+  const unicas=[...new Map(coins.map(q=>[q.nombre,q])).values()];
+  const rojos=unicas.filter(q=>q.semaforo==='rojo'),amars=unicas.filter(q=>q.semaforo==='amarillo');
+  const total=p.ingredientes?.length||0;
+  let html=`<div class="ares-title">${unicas.length>0?`⚠ ${unicas.length} químico${unicas.length>1?'s':''} detectado${unicas.length>1?'s':''} en ${total} ingredientes leídos`:`✓ Sin coincidencias en ${total} ingredientes leídos`}</div><div class="finds">`;
+  rojos.forEach(q=>{html+=`<div class="fi fi-r"><div class="fi-dot" style="background:#e24b4a"></div><div class="fi-body"><div class="fi-name">⚠ ${q.nombre}</div><div class="fi-risk">${q.riesgo!=='Sin información'?q.riesgo:'Nocividad: '+q.nocividad+'%'} · ${q.uso}</div></div></div>`;});
+  amars.forEach(q=>{html+=`<div class="fi fi-a"><div class="fi-dot" style="background:#ef9f27"></div><div class="fi-body"><div class="fi-name">⚡ ${q.nombre}</div><div class="fi-risk">${q.riesgo!=='Sin información'?q.riesgo:'Nocividad: '+q.nocividad+'%'} · ${q.uso}</div></div></div>`;});
+  if(!unicas.length)html+=`<div class="fi fi-n"><div class="fi-body" style="color:var(--text-3)">Ingredientes leídos: ${p.ingredientes?.slice(0,6).join(', ')||'no se pudo leer bien la imagen'}</div></div>`;
+  html+=`</div>`;
+  document.getElementById('cb').innerHTML=html;
+}
+function clsf(ing){const t=ing.toLowerCase();const enc=DB.filter(q=>{const ws=q.nombre.toLowerCase().split(/[\s,\/\(\)]+/).filter(p=>p.length>3);return ws.some(w=>t.includes(w))||t.includes(q.nombre.toLowerCase());});const r=enc.filter(q=>q.semaforo==='rojo'),a=enc.filter(q=>q.semaforo==='amarillo');if(r.length)return{semaforo:'rojo',enc,r,a};if(a.length)return{semaforo:'amarillo',enc,r:[],a};return{semaforo:'verde',enc:[],r:[],a:[]};}
+function guardar(){
+  const n=document.getElementById('pn').value.trim(),ing=document.getElementById('ping').value.trim();
+  if(!n||!ing){alert('Completa el nombre y los ingredientes del producto.');return;}
+  const cls=clsf(ing);
+  prods.unshift({id:Date.now(),nombre:n,cat:document.getElementById('pc').value,marca:document.getElementById('pm').value.trim(),ing,fecha:new Date().toLocaleDateString('es-CO'),...cls});
+  try{localStorage.setItem('lubo_prods',JSON.stringify(prods));}catch(e){}
+  document.getElementById('pn').value='';document.getElementById('pm').value='';document.getElementById('ping').value='';
+  renderP();
+}
+function delP(id){prods=prods.filter(p=>p.id!==id);try{localStorage.setItem('lubo_prods',JSON.stringify(prods));}catch(e){}renderP();}
+function renderP(){
+  const l=document.getElementById('pl');
+  if(!prods.length){l.innerHTML='<div class="empty"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><p>Aún no hay productos registrados</p></div>';return;}
+  l.innerHTML=prods.map(p=>{
+    const e=p.semaforo==='rojo'?'⚠':p.semaforo==='amarillo'?'⚡':'✓';
+    const sc='ps-'+(p.semaforo==='rojo'?'r':p.semaforo==='amarillo'?'a':'v');
+    const br=p.r?.slice(0,3).map(q=>`<span class="prod-tag badge-r">${q.nombre}</span>`).join('')||'';
+    const ba=p.a?.slice(0,2).map(q=>`<span class="prod-tag badge-a">${q.nombre}</span>`).join('')||'';
+    return`<div class="prod-card"><div class="prod-header"><div class="prod-sem ${sc}">${e}</div><div style="flex:1;min-width:0"><div class="prod-name">${p.nombre}</div><div class="prod-cat">${p.cat}${p.marca?' · '+p.marca:''} · ${p.fecha}</div></div><button class="del-btn" onclick="delP(${p.id})" aria-label="Eliminar"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div><div class="prod-ing">${p.ing}</div>${p.r?.length||p.a?.length?`<div class="prod-tags">${br}${ba}${p.enc?.length>5?`<span class="prod-tag" style="background:var(--gray-100);color:var(--text-3)">+${p.enc.length-5} más</span>`:''}</div>`:'<div style="font-size:11px;color:#3b6d11;margin-top:4px">✓ Sin químicos nocivos detectados</div>'}</div>`;
+  }).join('');
+}
+function initRes(){
+  const r=DB.filter(q=>q.semaforo==='rojo').length,a=DB.filter(q=>q.semaforo==='amarillo').length,v=DB.filter(q=>q.semaforo==='verde').length;
+  document.getElementById('sr').textContent=r;document.getElementById('sa').textContent=a;document.getElementById('sv').textContent=v;
+  const gp={};DB.forEach(q=>{if(!gp[q.uso])gp[q.uso]=[];gp[q.uso].push(q);});
+  let html='';
+  Object.entries(gp).forEach(([u,it])=>{
+    const ri=it.filter(q=>q.semaforo==='rojo').length,ai=it.filter(q=>q.semaforo==='amarillo').length,vi=it.filter(q=>q.semaforo==='verde').length;
+    html+=`<div class="group-block"><div class="group-title">${u} <span style="font-size:11px;font-weight:400;color:var(--text-3)">(${it.length})</span></div><div class="group-chips">${ri>0?`<span style="background:#fdf2f2;color:#a32d2d;padding:3px 9px;border-radius:20px;font-size:11px">🔴 ${ri} peligrosos</span>`:''}${ai>0?`<span style="background:#fef8ec;color:#854f0b;padding:3px 9px;border-radius:20px;font-size:11px">🟡 ${ai} precaución</span>`:''}${vi>0?`<span style="background:#f2f7ed;color:#3b6d11;padding:3px 9px;border-radius:20px;font-size:11px">🟢 ${vi} limpios</span>`:''}</div><div class="group-bar"><div style="width:${ri/it.length*100}%;background:#e24b4a"></div><div style="width:${ai/it.length*100}%;background:#ef9f27"></div><div style="width:${vi/it.length*100}%;background:#639922"></div></div></div>`;
+  });
+  if(prods.length)html+=`<div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)"><div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:9px">Mis productos (${prods.length})</div>${prods.map(p=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px"><span>${p.semaforo==='rojo'?'🔴':p.semaforo==='amarillo'?'🟡':'🟢'}</span><span style="font-weight:500;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</span><span style="color:var(--text-3)">${p.cat}</span><span style="color:var(--text-3);flex-shrink:0">${p.enc?.length||0} detect.</span></div>`).join('')}</div>`;
+  document.getElementById('rc').innerHTML=html;
+}
+
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('ib').style.display='flex';});
+document.getElementById('btn-install')?.addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();const{outcome}=await deferredPrompt.userChoice;deferredPrompt=null;document.getElementById('ib').style.display='none';});
+document.getElementById('close-install')?.addEventListener('click',()=>{document.getElementById('ib').style.display='none';});
+
+filtrar();renderP();
+</script>
+</body>
+</html>
