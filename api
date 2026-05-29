@@ -1,0 +1,82 @@
+export default async function handler(req, res) {
+  // Solo permitir POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método no permitido' });
+  }
+
+  // La API key vive aquí en el servidor, nunca llega al navegador
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'API key no configurada en el servidor' });
+  }
+
+  try {
+    const { imageBase64, mediaType } = req.body;
+
+    if (!imageBase64) {
+      return res.status(400).json({ error: 'Se requiere una imagen' });
+    }
+
+    const DB_NAMES = [
+      "Bromato de potasio","Nitratos y nitritos","Aceites parcialmente hidrogenados",
+      "BHA / BHT","Bisfenol A (BPA)","Aluminio (sales)","Tartrazina",
+      "Colorantes artificiales (Amarillo 5, Azul 1, Rojo 40)","Perclorato",
+      "Glutamato monosódico","Eritrosina (Rojo N°3)","Jarabe de maíz de alta fructosa",
+      "Azúcar","Propionato","Carragenina","Compuestos perfluorados (PFOA, PFOS)",
+      "Cloro y triclorometano","Benzoato de sodio","Propylene glycol",
+      "Peroxido de Benzoilo","Plomo","Mercurio","Formaldehido","Ftalatos",
+      "Alquitrán de hulla","Tolueno","Dioxano (1,4-dioxane)","Triclosán",
+      "Aluminio (clorhidrato)","DEA/TEA/MEA","Etanolaminas (MEA, TEA, DEA)",
+      "Resorcinol","Parfum","Oxibenzona y avobenzona","Metilparabeno",
+      "Propilparabeno","Bencilparabeno","Etilparabeno","Butilparabeno",
+      "Microplásticos (polietileno, nylon)","Laurate sulphate","Siliconas PEG/PPG",
+      "Paraffinum","Sodium","Ammonium","Siliconas","Diacetileno"
+    ];
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mediaType || 'image/jpeg',
+                data: imageBase64
+              }
+            },
+            {
+              type: 'text',
+              text: `Lee esta etiqueta de ingredientes. Extrae todos los ingredientes visibles. Compara con esta lista de químicos nocivos: ${DB_NAMES.join(', ')}. Responde SOLO JSON sin markdown ni texto extra: {"ingredientes":["lista completa"],"coincidencias":["solo los nombres exactos de la lista que coincidan"]}`
+            }
+          ]
+        }]
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.error?.message || 'Error de API' });
+    }
+
+    const text = data.content.map(i => i.text || '').join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    const result = JSON.parse(clean);
+
+    return res.status(200).json(result);
+
+  } catch (error) {
+    console.error('Error en /api/analizar:', error);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
