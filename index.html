@@ -445,37 +445,65 @@ async function analizarImgMain(){
 }
 
 function mostrarResMain(p){
+  // Si la imagen no fue legible
+  if(p.error==='imagen_no_legible'||(!p.ingredientes?.length&&!p.coincidencias?.length)){
+    document.getElementById('cb-main').innerHTML='<div style="padding:1rem;background:#fff8f0;border-radius:10px;font-size:13px;color:var(--text-2);line-height:1.6"><b>No se pudo leer bien la imagen.</b><br>Consejos:<br>• 🔍 Toca la imagen para ampliarla y verifica legibilidad<br>• 📸 Toma foto más cercana con buena iluminación<br>• 🔆 Evita reflejos o sombras sobre el texto</div>';
+    return;
+  }
+
   const coins=(p.coincidencias||[]).map(n=>DB.find(q=>q.nombre===n||q.nombre.toLowerCase().includes(n.toLowerCase()))).filter(Boolean);
   const unicas=[...new Map(coins.map(q=>[q.nombre,q])).values()];
   const rojos=unicas.filter(q=>q.semaforo==='rojo');
   const amars=unicas.filter(q=>q.semaforo==='amarillo');
   const total=p.ingredientes?.length||0;
+  const naturales=p.naturales||[];
+  const sinteticos=p.sinteticos_desconocidos||[];
+
   let clsf='verde';
   if(rojos.length>0)clsf='rojo';
   else if(amars.length>0)clsf='amarillo';
 
+  // Semáforo animado
   let semHtml='<div style="background:#f8f7f4;border:1px solid var(--border);border-radius:14px;padding:12px 20px;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:20px">';
   semHtml+='<div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div class="rsem-ball red '+(clsf==='rojo'?'active-red':'')+'"></div><div class="rsem-label">Peligroso</div></div>';
   semHtml+='<div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div class="rsem-ball amber '+(clsf==='amarillo'?'active-amber':'')+'"></div><div class="rsem-label">Precaución</div></div>';
   semHtml+='<div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div class="rsem-ball green '+(clsf==='verde'?'active-green':'')+'"></div><div class="rsem-label">Limpio</div></div>';
   semHtml+='</div>';
 
+  // Alerta NO CONSUMIR
   let alertaHtml='';
   if(clsf==='rojo')alertaHtml='<div class="no-consumir">🚫 NO CONSUMIR — Contiene químicos peligrosos</div>';
 
-  let titulo=unicas.length>0
-    ?'<div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:9px">⚠ '+unicas.length+' químico'+(unicas.length>1?'s':'')+' detectado'+(unicas.length>1?'s':'')+' de '+total+' ingredientes leídos</div>'
-    :'<div style="font-size:13px;font-weight:500;color:var(--green-dark);margin-bottom:9px">✅ Producto limpio — '+total+' ingredientes leídos, ninguno en lista de riesgo</div>';
-
-  const nombresDetectados=unicas.map(q=>q.nombre.toLowerCase());
-  const ingLimpios=(p.ingredientes||[]).filter(i=>!nombresDetectados.some(nd=>i.toLowerCase().includes(nd)));
+  // Título resumen
+  let titulo='';
+  if(unicas.length>0){
+    titulo='<div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:9px">⚠ '+unicas.length+' químico'+(unicas.length>1?'s':'')+' detectado'+(unicas.length>1?'s':'')+' en '+total+' ingredientes leídos</div>';
+  } else {
+    titulo='<div style="font-size:13px;font-weight:500;color:var(--green-dark);margin-bottom:9px">✅ Producto limpio — '+total+' ingredientes leídos, ninguno en lista de riesgo</div>';
+  }
 
   let html=semHtml+alertaHtml+titulo+'<div class="finds">';
+
+  // Químicos peligrosos
   rojos.forEach(q=>{html+='<div class="fi fi-r"><div class="fi-dot" style="background:#ff6161"></div><div class="fi-body"><div class="fi-name">⚠ '+q.nombre+'</div><div class="fi-risk">'+(q.riesgo!=='Sin información'?q.riesgo:'Nocividad: '+q.nocividad+'%')+' · '+q.uso+'</div></div></div>';});
   amars.forEach(q=>{html+='<div class="fi fi-a"><div class="fi-dot" style="background:#ebb414"></div><div class="fi-body"><div class="fi-name">⚡ '+q.nombre+'</div><div class="fi-risk">'+(q.riesgo!=='Sin información'?q.riesgo:'Nocividad: '+q.nocividad+'%')+' · '+q.uso+'</div></div></div>';});
-  if(ingLimpios.length>0){
-    html+='<div class="fi fi-v" style="cursor:pointer" onclick="this.querySelector(\'.ing-list\').style.display=this.querySelector(\'.ing-list\').style.display===\'none\'?\'block\':\'none\'"><div class="fi-dot" style="background:#53bb26"></div><div class="fi-body"><div class="fi-name">✓ '+ingLimpios.length+' ingrediente'+(ingLimpios.length>1?'s':'')+' sin riesgo <span style="font-size:10px;color:var(--text-3)">(toca para ver)</span></div><div class="ing-list" style="display:none;margin-top:6px;font-size:11px;color:var(--text-3);line-height:1.7">'+ingLimpios.join(', ')+'</div></div></div>';
+
+  // Ingredientes naturales identificados (plegable)
+  if(naturales.length>0){
+    html+='<div class="fi fi-v" style="cursor:pointer" onclick="this.querySelector(\'.ing-list\').style.display=this.querySelector(\'.ing-list\').style.display===\'none\'?\'block\':\'none\'">';
+    html+='<div class="fi-dot" style="background:#53bb26"></div>';
+    html+='<div class="fi-body"><div class="fi-name">🌿 '+naturales.length+' ingrediente'+(naturales.length>1?'s':'')+' natural'+(naturales.length>1?'es':'')+' <span style="font-size:10px;color:var(--text-3)">(toca para ver)</span></div>';
+    html+='<div class="ing-list" style="display:none;margin-top:6px;font-size:11px;color:var(--text-3);line-height:1.8">'+naturales.join(' · ')+'</div></div></div>';
   }
+
+  // Ingredientes sintéticos no nocivos (plegable, solo si hay)
+  if(sinteticos.length>0){
+    html+='<div class="fi fi-n" style="cursor:pointer" onclick="this.querySelector(\'.ing-list\').style.display=this.querySelector(\'.ing-list\').style.display===\'none\'?\'block\':\'none\'">';
+    html+='<div class="fi-dot" style="background:#9e9b94"></div>';
+    html+='<div class="fi-body"><div class="fi-name">🔬 '+sinteticos.length+' ingrediente'+(sinteticos.length>1?'s':'')+' sintético'+(sinteticos.length>1?'s':'')+' (no en lista nociva) <span style="font-size:10px;color:var(--text-3)">(toca para ver)</span></div>';
+    html+='<div class="ing-list" style="display:none;margin-top:6px;font-size:11px;color:var(--text-3);line-height:1.8">'+sinteticos.join(' · ')+'</div></div></div>';
+  }
+
   html+='</div>';
   document.getElementById('cb-main').innerHTML=html;
 }
