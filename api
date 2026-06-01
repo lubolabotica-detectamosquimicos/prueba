@@ -1,87 +1,163 @@
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
-  }
+  // Permitir CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'API key no configurada en el servidor' });
-  }
+  if (!apiKey) return res.status(500).json({ error: 'API key no configurada' });
 
   try {
     const { imageBase64, mediaType } = req.body;
-    if (!imageBase64) {
-      return res.status(400).json({ error: 'Se requiere una imagen' });
-    }
+    if (!imageBase64) return res.status(400).json({ error: 'Se requiere una imagen' });
 
-    // Lista de químicos nocivos
     const DB_QUIMICOS = [
-      "Bromato de potasio","Nitratos y nitritos","Aceites parcialmente hidrogenados",
-      "BHA / BHT","Bisfenol A (BPA)","Aluminio (sales)","Tartrazina",
-      "Colorantes artificiales (Amarillo 5, Azul 1, Rojo 40)","Perclorato",
-      "Glutamato monosódico","Eritrosina (Rojo N°3)","Jarabe de maíz de alta fructosa",
-      "Azúcar","Propionato","Carragenina","Compuestos perfluorados (PFOA, PFOS)",
-      "Cloro y triclorometano","Benzoato de sodio","Propylene glycol",
-      "Peroxido de Benzoilo","Plomo","Mercurio","Formaldehido","Ftalatos",
-      "Alquitrán de hulla","Tolueno","Dioxano (1,4-dioxane)","Triclosán",
-      "Aluminio (clorhidrato)","DEA/TEA/MEA","Etanolaminas (MEA, TEA, DEA)",
-      "Resorcinol","Parfum","Oxibenzona y avobenzona","Metilparabeno",
-      "Propilparabeno","Bencilparabeno","Etilparabeno","Butilparabeno",
-      "Microplásticos (polietileno, nylon)","Laurate sulphate","Siliconas PEG/PPG",
-      "Paraffinum","Sodium","Ammonium","Siliconas","Diacetileno"
+      "Bromato de potasio","Nitratos","Nitritos","Sodium nitrate","Sodium nitrite",
+      "Aceites parcialmente hidrogenados","Partially hydrogenated","Trans fat",
+      "BHA","BHT","Butylated hydroxyanisole","Butylated hydroxytoluene",
+      "Bisfenol A","BPA","Bisphenol",
+      "Aluminio","Aluminum","Alum",
+      "Tartrazina","Tartrazine","E102","Yellow 5","FD&C Yellow 5",
+      "Amarillo 5","Azul 1","Blue 1","Rojo 40","Red 40","FD&C Red 40",
+      "Colorantes artificiales","Artificial colors","Artificial colours",
+      "Perclorato","Perchlorate",
+      "Glutamato monosódico","MSG","Monosodium glutamate","E621",
+      "Eritrosina","Erythrosine","Red 3","E127",
+      "Jarabe de maíz de alta fructosa","High fructose corn syrup","HFCS",
+      "Propionato","Propionate","Calcium propionate","Sodium propionate","E282","E281",
+      "Carragenina","Carrageenan","E407",
+      "PFOA","PFOS","Perfluorooctanoic","Perfluorooctane",
+      "Benzoato de sodio","Sodium benzoate","E211","Benzoic acid",
+      "Propylene glycol","Propilenglicol","E1520",
+      "Peróxido de benzoilo","Benzoyl peroxide",
+      "Plomo","Lead","Pb",
+      "Mercurio","Mercury","Hg","Thimerosal",
+      "Formaldehido","Formaldehyde","Formalin","DMDM Hydantoin","Quaternium-15",
+      "Ftalatos","Phthalates","DBP","DEHP","DEP","Dibutyl phthalate",
+      "Alquitrán de hulla","Coal tar","HC Blue","D&C",
+      "Tolueno","Toluene",
+      "1,4-dioxane","Dioxano","Dioxane","PEG-","Sodium laureth","Sodium myreth",
+      "Triclosán","Triclosan","Triclocarban",
+      "Aluminum chlorohydrate","Aluminum zirconium","Aluminium chlorohydrate",
+      "DEA","TEA","MEA","Diethanolamine","Triethanolamine","Monoethanolamine",
+      "Cocamide DEA","Lauramide DEA","Linoleamide DEA",
+      "Resorcinol","Resorcin",
+      "Parfum","Fragrance","Fragancia artificial",
+      "Oxybenzone","Oxibenzona","Benzophenone-3","Avobenzone","Avobenzona",
+      "Methylparaben","Metilparabeno","Ethylparaben","Etilparabeno",
+      "Propylparaben","Propilparabeno","Butylparaben","Butilparabeno","Benzylparaben",
+      "Polyethylene","Polietileno","Nylon","Microbeads","Microplásticos",
+      "Sodium lauryl sulfate","SLS","Lauryl sulphate","Laurate sulphate",
+      "PEG","PPG","Silicone","Dimethicone","Cyclopentasiloxane","Cyclomethicone",
+      "Paraffinum liquidum","Paraffin","Mineral oil","Aceite mineral",
+      "Sodium laureth sulfate","SLES","Ammonium lauryl","Ammonium laureth",
+      "Diacetyl","Diacetileno","Acetyl propionyl","Acetoin"
     ];
 
-    const prompt = `Eres un experto analizador de etiquetas de ingredientes de productos de consumo (alimentos y cosméticos).
+    // Prompt optimizado — más directo, menos restricciones
+    const prompt = `Analiza esta imagen. Tu tarea es leer los ingredientes del producto.
 
-Analiza esta imagen de etiqueta y sigue estas instrucciones exactas:
+INSTRUCCIONES:
+- Lee TODO el texto visible que sea una lista de ingredientes
+- Los ingredientes pueden estar en español, inglés, latín científico, francés, alemán, italiano o cualquier idioma
+- Busca secciones que digan: "Ingredients:", "Ingredientes:", "INCI:", "Composición:", "Contiene:", etc.
+- Si hay texto pequeño, intenta leerlo igualmente
+- Compara cada ingrediente con esta lista de sustancias nocivas: ${DB_QUIMICOS.join(', ')}
 
-1. LEE todos los ingredientes visibles en el texto de la imagen, en cualquier idioma (español, inglés, latín científico, francés, etc.)
-2. COMPARA cada ingrediente leído con esta lista de químicos nocivos: ${DB_QUIMICOS.join(', ')}
-3. IDENTIFICA cuáles ingredientes de la imagen coinciden (exacta o parcialmente) con los de la lista de químicos nocivos
-4. CLASIFICA los ingredientes restantes como naturales o sintéticos según tu conocimiento
+RESPONDE SOLO CON ESTE JSON (sin explicaciones, sin markdown):
+{"ingredientes":["ingrediente1","ingrediente2"],"coincidencias":["nombre exacto de la lista nociva si coincide"],"naturales":["ingredientes de origen natural identificados"],"sinteticos_desconocidos":["ingredientes sintéticos que NO están en la lista nociva"]}
 
-Responde ÚNICAMENTE con este JSON (sin markdown, sin texto adicional):
-{
-  "ingredientes": ["lista completa de ingredientes leídos en la imagen"],
-  "coincidencias": ["nombres EXACTOS de la lista de químicos nocivos que encontraste"],
-  "naturales": ["ingredientes que son claramente de origen natural"],
-  "sinteticos_desconocidos": ["ingredientes sintéticos que no están en la lista de nocivos pero no son naturales"]
-}
+Si definitivamente no hay ingredientes legibles en la imagen responde exactamente:
+{"error":"imagen_no_legible","ingredientes":[],"coincidencias":[],"naturales":[],"sinteticos_desconocidos":[]}`;
 
-Si la imagen no es legible o no contiene ingredientes, responde:
-{"error": "imagen_no_legible", "ingredientes": [], "coincidencias": [], "naturales": [], "sinteticos_desconocidos": []}`;
+    // Intento 1: modelo flash rápido
+    let result = await llamarGemini(apiKey, imageBase64, mediaType, prompt, 'gemini-1.5-flash');
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { inline_data: { mime_type: mediaType || 'image/jpeg', data: imageBase64 } },
-            { text: prompt }
-          ]
-        }],
-        generationConfig: {
-          temperature: 0.1,
-          topP: 0.8,
-          maxOutputTokens: 2048
-        }
-      })
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      return res.status(response.status).json({ error: data.error?.message || 'Error de API' });
+    // Si no leyó nada, intento 2: modelo pro más potente
+    if (!result || result.error === 'imagen_no_legible' || !result.ingredientes?.length) {
+      console.log('Flash no leyó, intentando con Pro...');
+      result = await llamarGemini(apiKey, imageBase64, mediaType, prompt, 'gemini-1.5-pro');
     }
 
-    const text = data.candidates[0].content.parts[0].text;
-    const clean = text.replace(/```json|```/g, '').trim();
-    const result = JSON.parse(clean);
+    // Si sigue sin leer, intento 3: prompt más simple
+    if (!result || result.error === 'imagen_no_legible' || !result.ingredientes?.length) {
+      console.log('Intentando con prompt simplificado...');
+      const promptSimple = `Lee el texto de esta imagen y extrae la lista de ingredientes del producto. Responde SOLO con JSON: {"ingredientes":["lista"],"coincidencias":[],"naturales":[],"sinteticos_desconocidos":[]}`;
+      result = await llamarGemini(apiKey, imageBase64, mediaType, promptSimple, 'gemini-1.5-pro');
+    }
+
+    if (!result) {
+      return res.status(200).json({
+        error: 'imagen_no_legible',
+        ingredientes: [], coincidencias: [], naturales: [], sinteticos_desconocidos: []
+      });
+    }
 
     return res.status(200).json(result);
 
   } catch (error) {
     console.error('Error en /api/analizar:', error);
-    return res.status(500).json({ error: 'Error interno del servidor' });
+    return res.status(500).json({
+      error: 'Error interno',
+      detalle: error.message,
+      ingredientes: [], coincidencias: [], naturales: [], sinteticos_desconocidos: []
+    });
+  }
+}
+
+async function llamarGemini(apiKey, imageBase64, mediaType, prompt, modelo) {
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: mediaType || 'image/jpeg', data: imageBase64 } },
+              { text: prompt }
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.05,
+            topP: 0.9,
+            maxOutputTokens: 4096
+          },
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+          ]
+        })
+      }
+    );
+
+    const data = await response.json();
+    if (!response.ok || !data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      console.error(`Error ${modelo}:`, JSON.stringify(data));
+      return null;
+    }
+
+    const text = data.candidates[0].content.parts[0].text;
+    // Limpiar cualquier formato markdown
+    const clean = text
+      .replace(/```json\s*/gi, '')
+      .replace(/```\s*/gi, '')
+      .replace(/^\s*[\r\n]/gm, '')
+      .trim();
+
+    // Extraer JSON aunque venga con texto alrededor
+    const jsonMatch = clean.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+
+    return JSON.parse(jsonMatch[0]);
+
+  } catch (err) {
+    console.error(`Error llamando ${modelo}:`, err.message);
+    return null;
   }
 }
