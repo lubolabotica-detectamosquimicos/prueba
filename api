@@ -1,5 +1,9 @@
+// ============================================================
+// LuBo La Botica — API: /api/analizar
+// Analiza imágenes con Gemini IA y detecta químicos nocivos
+// ============================================================
+
 export default async function handler(req, res) {
-  // Permitir CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -10,15 +14,17 @@ export default async function handler(req, res) {
   if (!apiKey) return res.status(500).json({ error: 'API key no configurada' });
 
   try {
-    const { imageBase64, mediaType } = req.body;
+    const { imageBase64, mediaType, userId, userName } = req.body;
     if (!imageBase64) return res.status(400).json({ error: 'Se requiere una imagen' });
 
+    // ── BASE DE DATOS: QUÍMICOS NOCIVOS ──────────────────────────
     const DB_QUIMICOS = [
-      "Bromato de potasio","Nitratos","Nitritos","Sodium nitrate","Sodium nitrite",
-      "Aceites parcialmente hidrogenados","Partially hydrogenated","Trans fat",
+      // Alimentos
+      "Bromato de potasio","Potassium bromate","Nitratos","Nitritos","Sodium nitrate","Sodium nitrite",
+      "Aceites parcialmente hidrogenados","Partially hydrogenated","Trans fat","Grasas trans",
       "BHA","BHT","Butylated hydroxyanisole","Butylated hydroxytoluene",
       "Bisfenol A","BPA","Bisphenol",
-      "Aluminio","Aluminum","Alum",
+      "Aluminio","Aluminum","Alum","Aluminosilicato",
       "Tartrazina","Tartrazine","E102","Yellow 5","FD&C Yellow 5",
       "Amarillo 5","Azul 1","Blue 1","Rojo 40","Red 40","FD&C Red 40",
       "Colorantes artificiales","Artificial colors","Artificial colours",
@@ -28,6 +34,8 @@ export default async function handler(req, res) {
       "Jarabe de maíz de alta fructosa","High fructose corn syrup","HFCS",
       "Propionato","Propionate","Calcium propionate","Sodium propionate","E282","E281",
       "Carragenina","Carrageenan","E407",
+      "Diacetyl","Diacetilo","Acetyl propionyl","Acetoin",
+      // Cosméticos / Ambos
       "PFOA","PFOS","Perfluorooctanoic","Perfluorooctane",
       "Benzoato de sodio","Sodium benzoate","E211","Benzoic acid",
       "Propylene glycol","Propilenglicol","E1520",
@@ -52,47 +60,67 @@ export default async function handler(req, res) {
       "Sodium lauryl sulfate","SLS","Lauryl sulphate","Laurate sulphate",
       "PEG","PPG","Silicone","Dimethicone","Cyclopentasiloxane","Cyclomethicone",
       "Paraffinum liquidum","Paraffin","Mineral oil","Aceite mineral",
-      "Sodium laureth sulfate","SLES","Ammonium lauryl","Ammonium laureth",
-      "Diacetyl","Diacetileno","Acetyl propionyl","Acetoin"
+      "Sodium laureth sulfate","SLES","Ammonium lauryl","Ammonium laureth"
     ];
 
-    // Prompt optimizado — más directo, menos restricciones
-    const prompt = `Analiza esta imagen. Tu tarea es leer los ingredientes del producto.
+    const prompt = `Analiza esta imagen de una etiqueta de producto. Tu tarea principal es extraer la lista de ingredientes.
 
-INSTRUCCIONES:
-- Lee TODO el texto visible que sea una lista de ingredientes
-- Los ingredientes pueden estar en español, inglés, latín científico, francés, alemán, italiano o cualquier idioma
-- Busca secciones que digan: "Ingredients:", "Ingredientes:", "INCI:", "Composición:", "Contiene:", etc.
-- Si hay texto pequeño, intenta leerlo igualmente
-- Compara cada ingrediente con esta lista de sustancias nocivas: ${DB_QUIMICOS.join(', ')}
+INSTRUCCIONES DETALLADAS:
+1. Busca secciones que digan: "Ingredients:", "Ingredientes:", "INCI:", "Composición:", "Contiene:", "Componentes:", etc.
+2. Lee TODO el texto visible aunque sea pequeño, en cualquier idioma.
+3. Compara CADA ingrediente con esta lista de sustancias nocivas: ${DB_QUIMICOS.join(', ')}
+4. Para ingredientes naturales busca: plantas, frutas, aceites vegetales, minerales naturales, extractos botánicos, etc.
+5. Si un ingrediente nocivo aparece aunque sea UNO SOLO, lo marcas en coincidencias.
 
-RESPONDE SOLO CON ESTE JSON (sin explicaciones, sin markdown):
-{"ingredientes":["ingrediente1","ingrediente2"],"coincidencias":["nombre exacto de la lista nociva si coincide"],"naturales":["ingredientes de origen natural identificados"],"sinteticos_desconocidos":["ingredientes sintéticos que NO están en la lista nociva"]}
+REGLA CRÍTICA DE SEMÁFORO ROJO:
+- Si encuentras 1 o más ingredientes de la lista nociva con nocividad > 30, la clasificación es ROJA.
+- Si el % de ingredientes nocivos respecto al total > 30%, también es ROJA.
+- Ante la duda entre rojo y amarillo, SIEMPRE elige rojo.
+
+RESPONDE SOLO CON ESTE JSON (sin explicaciones, sin markdown, sin texto adicional):
+{
+  "ingredientes": ["lista completa de todos los ingredientes encontrados"],
+  "coincidencias": ["nombre exacto de la sustancia de la lista nociva que coincide"],
+  "naturales": ["ingredientes claramente de origen natural"],
+  "sinteticos_desconocidos": ["ingredientes sintéticos que NO están en la lista nociva"],
+  "clasificacion_sugerida": "rojo|amarillo|verde",
+  "porcentaje_nocivos": 0
+}
 
 Si definitivamente no hay ingredientes legibles en la imagen responde exactamente:
-{"error":"imagen_no_legible","ingredientes":[],"coincidencias":[],"naturales":[],"sinteticos_desconocidos":[]}`;
+{"error":"imagen_no_legible","ingredientes":[],"coincidencias":[],"naturales":[],"sinteticos_desconocidos":[],"clasificacion_sugerida":"verde","porcentaje_nocivos":0}`;
 
-    // Intento 1: modelo flash rápido
+    // Intento 1: Flash rápido
     let result = await llamarGemini(apiKey, imageBase64, mediaType, prompt, 'gemini-1.5-flash');
 
-    // Si no leyó nada, intento 2: modelo pro más potente
+    // Intento 2: Pro más potente si Flash falla
     if (!result || result.error === 'imagen_no_legible' || !result.ingredientes?.length) {
       console.log('Flash no leyó, intentando con Pro...');
       result = await llamarGemini(apiKey, imageBase64, mediaType, prompt, 'gemini-1.5-pro');
     }
 
-    // Si sigue sin leer, intento 3: prompt más simple
+    // Intento 3: Prompt simplificado
     if (!result || result.error === 'imagen_no_legible' || !result.ingredientes?.length) {
       console.log('Intentando con prompt simplificado...');
-      const promptSimple = `Lee el texto de esta imagen y extrae la lista de ingredientes del producto. Responde SOLO con JSON: {"ingredientes":["lista"],"coincidencias":[],"naturales":[],"sinteticos_desconocidos":[]}`;
+      const promptSimple = `Lee los ingredientes de esta etiqueta. Responde SOLO con JSON: {"ingredientes":["lista"],"coincidencias":[],"naturales":[],"sinteticos_desconocidos":[],"clasificacion_sugerida":"verde","porcentaje_nocivos":0}`;
       result = await llamarGemini(apiKey, imageBase64, mediaType, promptSimple, 'gemini-1.5-pro');
     }
 
     if (!result) {
       return res.status(200).json({
         error: 'imagen_no_legible',
-        ingredientes: [], coincidencias: [], naturales: [], sinteticos_desconocidos: []
+        ingredientes: [], coincidencias: [], naturales: [],
+        sinteticos_desconocidos: [], clasificacion_sugerida: 'verde', porcentaje_nocivos: 0
       });
+    }
+
+    // Registrar estadísticas si se provee userId (opcional)
+    if (userId && result.ingredientes?.length > 0) {
+      try {
+        await registrarStats(userId, userName || 'Usuario', result);
+      } catch (statsErr) {
+        console.log('Stats no guardadas (no crítico):', statsErr.message);
+      }
     }
 
     return res.status(200).json(result);
@@ -100,9 +128,9 @@ Si definitivamente no hay ingredientes legibles en la imagen responde exactament
   } catch (error) {
     console.error('Error en /api/analizar:', error);
     return res.status(500).json({
-      error: 'Error interno',
-      detalle: error.message,
-      ingredientes: [], coincidencias: [], naturales: [], sinteticos_desconocidos: []
+      error: 'Error interno', detalle: error.message,
+      ingredientes: [], coincidencias: [], naturales: [],
+      sinteticos_desconocidos: [], clasificacion_sugerida: 'verde', porcentaje_nocivos: 0
     });
   }
 }
@@ -121,11 +149,7 @@ async function llamarGemini(apiKey, imageBase64, mediaType, prompt, modelo) {
               { text: prompt }
             ]
           }],
-          generationConfig: {
-            temperature: 0.05,
-            topP: 0.9,
-            maxOutputTokens: 4096
-          },
+          generationConfig: { temperature: 0.05, topP: 0.9, maxOutputTokens: 4096 },
           safetySettings: [
             { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
             { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
@@ -143,21 +167,121 @@ async function llamarGemini(apiKey, imageBase64, mediaType, prompt, modelo) {
     }
 
     const text = data.candidates[0].content.parts[0].text;
-    // Limpiar cualquier formato markdown
-    const clean = text
-      .replace(/```json\s*/gi, '')
-      .replace(/```\s*/gi, '')
-      .replace(/^\s*[\r\n]/gm, '')
-      .trim();
-
-    // Extraer JSON aunque venga con texto alrededor
+    const clean = text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').replace(/^\s*[\r\n]/gm, '').trim();
     const jsonMatch = clean.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return null;
 
     return JSON.parse(jsonMatch[0]);
-
   } catch (err) {
     console.error(`Error llamando ${modelo}:`, err.message);
     return null;
+  }
+}
+
+// ── SISTEMA DE STATS: guarda en archivo JSON temporal en /tmp ─────────────────
+// Para producción real, conectar a una base de datos (Supabase, PlanetScale, etc.)
+async function registrarStats(userId, userName, resultado) {
+  const fs = await import('fs/promises');
+  const path = await import('path');
+  const statsFile = '/tmp/lubo_stats.json';
+
+  let stats = {};
+  try {
+    const raw = await fs.readFile(statsFile, 'utf8');
+    stats = JSON.parse(raw);
+  } catch {
+    stats = {};
+  }
+
+  if (!stats[userId]) {
+    stats[userId] = {
+      nombre: userName,
+      usos: 0,
+      ingredientes_detectados: [],
+      quimicos_encontrados: [],
+      primera_vez: new Date().toISOString(),
+      ultima_vez: new Date().toISOString()
+    };
+  }
+
+  stats[userId].usos += 1;
+  stats[userId].ultima_vez = new Date().toISOString();
+  stats[userId].nombre = userName;
+
+  // Acumular ingredientes únicos detectados
+  const nuevosIngredientes = resultado.ingredientes || [];
+  const nuevosQuimicos = resultado.coincidencias || [];
+
+  nuevosIngredientes.forEach(ing => {
+    if (!stats[userId].ingredientes_detectados.includes(ing)) {
+      stats[userId].ingredientes_detectados.push(ing);
+    }
+  });
+
+  nuevosQuimicos.forEach(q => {
+    if (!stats[userId].quimicos_encontrados.includes(q)) {
+      stats[userId].quimicos_encontrados.push(q);
+    }
+  });
+
+  await fs.writeFile(statsFile, JSON.stringify(stats, null, 2));
+}
+
+// ============================================================
+// LuBo La Botica — API: /api/stats
+// Lee estadísticas de uso por usuario
+// ============================================================
+// NOTA: En Vercel serverless, /tmp no persiste entre invocaciones.
+// Para producción real, usar Supabase, PlanetScale, Redis o similar.
+// Esta implementación sirve como base para conectar cualquier BD.
+// ============================================================
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // Solo GET permitido
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Método no permitido' });
+
+  // Clave simple de admin (cambiar en producción)
+  const adminKey = req.query.key || '';
+  if (adminKey !== (process.env.ADMIN_KEY || 'lubo2024admin')) {
+    return res.status(401).json({ error: 'No autorizado' });
+  }
+
+  try {
+    const fs = await import('fs/promises');
+    const statsFile = '/tmp/lubo_stats.json';
+
+    let stats = {};
+    try {
+      const raw = await fs.readFile(statsFile, 'utf8');
+      stats = JSON.parse(raw);
+    } catch {
+      stats = {};
+    }
+
+    // Construir resumen
+    const usuarios = Object.entries(stats).map(([id, data]) => ({
+      userId: id,
+      nombre: data.nombre,
+      usos: data.usos,
+      total_ingredientes_vistos: data.ingredientes_detectados?.length || 0,
+      quimicos_encontrados: data.quimicos_encontrados?.length || 0,
+      lista_quimicos: data.quimicos_encontrados || [],
+      primera_vez: data.primera_vez,
+      ultima_vez: data.ultima_vez
+    }));
+
+    return res.status(200).json({
+      total_usuarios: usuarios.length,
+      total_escaneos: usuarios.reduce((a, u) => a + u.usos, 0),
+      usuarios: usuarios.sort((a, b) => b.usos - a.usos)
+    });
+
+  } catch (error) {
+    return res.status(500).json({ error: 'Error leyendo stats', detalle: error.message });
   }
 }
