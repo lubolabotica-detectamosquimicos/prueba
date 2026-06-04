@@ -3,3 +3,26 @@
   --verde-oscuro:#2a8743;
   --verde-claro:#53bb26;
 }
+body{
+    font-family:'Fredoka',sans-serif;
+}
+
+.hero{
+    text-align:center;
+    padding:20px;
+}
+
+.logo{
+    width:120px;
+    margin:auto;
+}
+
+.hero h1{
+    color:var(--verde-oscuro);
+    font-size:3rem;
+}
+
+.hero p{
+    color:var(--amarillo);
+    font-size:1.2rem;
+}
