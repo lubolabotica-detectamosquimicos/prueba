@@ -1,0 +1,47 @@
+// ============================================================
+// LuBo La Botica — API: /api/stats
+// Lee estadísticas de uso por usuario
+// ============================================================
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Método no permitido' });
+
+  const adminKey = req.query.key || '';
+  if (adminKey !== (process.env.ADMIN_KEY || 'lubo2024admin')) {
+    return res.status(401).json({ error: 'No autorizado' });
+  }
+
+  try {
+    const fs = await import('fs/promises');
+    const statsFile = '/tmp/lubo_stats.json';
+    let stats = {};
+    try {
+      const raw = await fs.readFile(statsFile, 'utf8');
+      stats = JSON.parse(raw);
+    } catch { stats = {}; }
+
+    const usuarios = Object.entries(stats).map(([id, data]) => ({
+      userId: id,
+      nombre: data.nombre,
+      usos: data.usos,
+      total_ingredientes_vistos: data.ingredientes_detectados?.length || 0,
+      quimicos_encontrados: data.quimicos_encontrados?.length || 0,
+      lista_quimicos: data.quimicos_encontrados || [],
+      primera_vez: data.primera_vez,
+      ultima_vez: data.ultima_vez
+    }));
+
+    return res.status(200).json({
+      total_usuarios: usuarios.length,
+      total_escaneos: usuarios.reduce((a, u) => a + u.usos, 0),
+      usuarios: usuarios.sort((a, b) => b.usos - a.usos)
+    });
+
+  } catch (error) {
+    return res.status(500).json({ error: 'Error leyendo stats', detalle: error.message });
+  }
+}
