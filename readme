@@ -1,118 +1,216 @@
+# 🌿 LuBo La Botica
 
-# LuBo La Botica — App Optimizada v2.0
-## Estructura del proyecto
+Detector inteligente de químicos nocivos en ingredientes de productos cotidianos.
+
+**Deploy:** [vidasinquimicoslubo-labotica.vercel.app](https://vidasinquimicoslubo-labotica.vercel.app)
+
+---
+
+## 📂 Estructura
 
 ```
-lubo-app/
-├── index.html              ← Pantalla principal completa (UI + lógica)
-├── vercel.json             ← Configuración despliegue Vercel
-├── ingredientesnatural.js  ← Base de datos 633 ingredientes naturales (referencia)
-└── api/
-    ├── analizar.js         ← API Gemini IA: analiza imágenes de etiquetas
-    └── stats.js            ← API estadísticas de uso (admin)
+.
+├── index.html              ← Aplicación (HTML)
+├── vercel.json             ← Configuración deploy
+│
+├── css/
+│   ├── variables.css      ← Colores, tipografía, espaciado
+│   └── styles.css         ← Estilos de UI
+│
+├── js/
+│   ├── scanner.js         ← Herramienta crop/recorte
+│   ├── semaforo.js        ← Lógica visual del semáforo
+│   └── utils.js           ← Funciones reutilizables
+│
+├── data/
+│   └── db-naturales.js    ← Base de datos de ingredientes
+│
+├── api/
+│   ├── analizar.js        ← Análisis con Gemini API
+│   └── stats.js           ← Estadísticas
+│
+└── assets/
+    └── logos/
+        └── leaf.png       ← Logo
 ```
 
 ---
 
-## ✅ CAMBIOS IMPLEMENTADOS
+## 🎯 Características
 
-### 1. Pantalla principal limpia
-- Header con logo + link a lubo-labotica.com ✓
-- Semáforo superior SOLO encima del escáner ✓
-- Eliminado semáforo duplicado debajo de ingredientes ✓
-
-### 2. Semáforo animado e interactivo
-- Las 3 bolas comienzan apagadas (opacidad 35%)
-- Al analizar, la bola correspondiente se **ilumina, crece y pulsa** con animación
-- ROJO: Si hay 1+ químico con nocividad >30% en la lista
-- AMARILLO: Si hay químicos pero ninguno >30%
-- VERDE: Si no se detecta ningún químico
-
-### 3. Escáner optimizado
-- Botón principal: **cámara directa** desde la app
-- Botón secundario: subir foto desde galería
-- Preview de la imagen con botón de zoom
-- Botón de análisis con IA
-
-### 4. Base de datos de ingredientes naturales
-- 633 ingredientes naturales verificados en `ingredientesnatural.js`
-- La IA los identifica en cada escaneo y los lista en verde plegable
-
-### 5. Regla semáforo ROJO (estricta)
-- **1 solo químico de la lista nociva = ROJO automático** si su nocividad > 30
-- Si porcentaje nocivos > 30% del total = ROJO
-- Ante duda → siempre ROJO
-- Mensaje "🚫 NO CONSUMIR" animado en rojo
-
-### 6. Estadísticas de uso (Tab "Mis análisis")
-- Guardadas en localStorage del dispositivo
-- Muestra: total escaneos, historial de últimos 20 análisis
-- Por cada análisis: fecha, clasificación, ingredientes detectados, químicos encontrados
-- API `/api/stats?key=lubo2024admin` para ver stats de todos los usuarios (servidor)
+- ✅ Detector de químicos nocivos en tiempo real
+- ✅ Herramienta crop/recorte para análisis preciso
+- ✅ Semáforo visual (rojo/amarillo/verde)
+- ✅ Base de datos de ingredientes naturales
+- ✅ Estadísticas de uso local
+- ✅ Offline-first (localStorage)
+- ✅ Mobile-friendly (PWA ready)
 
 ---
 
-## 🚀 DESPLIEGUE EN VERCEL
+## 🚀 Deploy
 
-### Paso 1: Subir archivos
-Sube esta carpeta a un repositorio GitHub o directamente a Vercel.
+### Vercel (Recomendado)
 
-### Paso 2: Variables de entorno en Vercel
-En el dashboard de Vercel → Settings → Environment Variables:
+```bash
+# 1. Conectar repo a Vercel
+vercel link
+
+# 2. Deploy automático on push
+git push origin main
 ```
-GEMINI_API_KEY = tu_api_key_de_gemini
-ADMIN_KEY = una_clave_secreta_para_ver_stats
-```
 
-### Paso 3: Deploy
-Vercel detecta automáticamente `vercel.json` y configura las rutas.
+Vercel automáticamente:
+- Detecta `/api/*` como serverless functions
+- Sirve `/` como estática
+- Deploy en 1-2 minutos
 
 ---
 
-## 📊 VER ESTADÍSTICAS DE USUARIOS
+## 🔧 Desarrollo Local
 
-Accede a:
+```bash
+# Servidor HTTP local (cualquiera sirve)
+python3 -m http.server 8000
+
+# Abre en navegador
+http://localhost:8000
 ```
-https://tu-app.vercel.app/api/stats?key=lubo2024admin
-```
-
-Devuelve JSON con:
-- Total usuarios registrados
-- Total escaneos
-- Por usuario: usos, ingredientes vistos, químicos encontrados
-
-> ⚠️ **NOTA IMPORTANTE**: En Vercel serverless, `/tmp` no persiste entre invocaciones.
-> Para estadísticas persistentes en producción, conectar a:
-> - **Supabase** (PostgreSQL gratuito) — recomendado
-> - **PlanetScale** (MySQL serverless)
-> - **Redis** (Upstash gratuito)
-> 
-> Las estadísticas locales del usuario **sí persisten** en localStorage del navegador.
 
 ---
 
-## 🔧 PERSONALIZACIÓN
+## 📝 Editar la App
 
-### Cambiar la URL del formulario Formspree
-En `index.html`, buscar:
+### Colores y tipografía
+→ `css/variables.css` línea 19-28
+
+```css
+--brand-green: #53bb26;      /* Cambiar aquí */
+--font-body: 'DM Sans'...
+```
+
+### Ingredientes/Químicos
+→ `data/db-naturales.js` línea 10-35
+
 ```javascript
-const FORMSPREE_URL = 'https://formspree.io/f/mnjrknka';
+IngredientesDB.agregar('Parabeno', 'ROJO', 80, 'Conservante natural');
 ```
-Reemplazar con tu URL de Formspree.
 
-### Agregar más químicos nocivos
-En `api/analizar.js`, agregar al array `DB_QUIMICOS`.
-En `index.html`, agregar al array `DB_RAW` con formato:
+### Lógica del semáforo
+→ `js/semaforo.js` línea 15-35
+
 ```javascript
-{nombre:"Nombre", uso:"Alimentos|Cosmética|Ambos", riesgo:"Descripción riesgo", nocividad:70, productos:"Dónde se encuentra"}
+Semaforo.analizar(ingredientes)  // Determina resultado
+Semaforo.mostrar(resultado)      // Actualiza UI
 ```
 
-### Cambiar clave admin de stats
-En Vercel → Environment Variables: `ADMIN_KEY = tu_nueva_clave`
+### Herramienta crop
+→ `js/scanner.js` línea 20-26
+
+```javascript
+config: {
+  minWidth: 50,           // Tamaño mínimo
+  strokeColor: '#53bb26', // Color selección
+}
+```
 
 ---
 
-## 📱 FUNCIONES PWA
-La app puede instalarse como PWA en el teléfono.
-Para activar el banner de instalación nativo del navegador,
-agregar un `manifest.json` y un Service Worker (opcional para fase siguiente).
+## 📚 APIs
+
+### POST /api/analizar
+Analiza imagen de ingredientes
+
+**Request:**
+```
+Content-Type: multipart/form-data
+image: <File>
+```
+
+**Response:**
+```json
+{
+  "ingredientes": [
+    {
+      "nombre": "Óxido de titanio",
+      "categoria": "VERDE",
+      "nocividad": 25
+    }
+  ],
+  "texto_extraido": "...",
+  "timestamp": "2024-06-08T..."
+}
+```
+
+### POST /api/stats
+Registra estadísticas de uso
+
+---
+
+## 🔑 Variables de Entorno
+
+Agregar en Vercel dashboard → Settings → Environment Variables:
+
+```
+GOOGLE_API_KEY=tu_api_key_aqui
+FORMSPREE_ID=tu_formspree_id_aqui
+```
+
+---
+
+## 📱 Navegadores Soportados
+
+- Chrome/Edge (v90+)
+- Firefox (v88+)
+- Safari (v14+)
+- Mobile browsers (iOS Safari, Chrome Mobile)
+
+---
+
+## 📊 Estadísticas
+
+El app guarda localmente:
+- Imágenes analizadas
+- Químicos encontrados
+- Historial de búsquedas
+- Preferencias del usuario
+
+(Opcional: enviar a Formspree para análisis)
+
+---
+
+## 🛠️ Stack
+
+- **Frontend:** Vanilla JavaScript (ES6+)
+- **Styling:** CSS3 (variables, grid, flexbox)
+- **API:** Google Gemini AI
+- **Hosting:** Vercel (serverless + static)
+- **Storage:** localStorage + Formspree
+- **PWA:** Service Worker ready
+
+---
+
+## 📄 Licencia
+
+MIT
+
+---
+
+## 👤 Contacto
+
+**Email:** [tu-email@lubo.com](mailto:tu-email@lubo.com)  
+**Web:** [lubo-labotica.com](https://lubo-labotica.com)
+
+---
+
+## 🚀 Roadmap
+
+- [ ] Análisis OCR mejorado
+- [ ] Comparador de productos
+- [ ] Alertas de químicos nuevos
+- [ ] Integración con escáneres de código QR
+- [ ] App nativa (React Native)
+
+---
+
+**Hecho con 💚 por el equipo de LuBo La Botica**
