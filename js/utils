@@ -1,0 +1,182 @@
+/**
+ * UTILS.JS - Utilidades reutilizables
+ * EDITABLE: Agrega funciones sin tocar HTML
+ */
+
+const Utils = {
+  /**
+   * Convierte archivo a base64
+   */
+  fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  },
+
+  /**
+   * Valida imagen
+   */
+  validarImagen(file) {
+    const tipos = ['image/jpeg', 'image/png', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (!tipos.includes(file.type)) {
+      return { ok: false, error: 'Formato no soportado (JPG, PNG, WebP)' };
+    }
+    if (file.size > maxSize) {
+      return { ok: false, error: 'Imagen muy grande (máx 5MB)' };
+    }
+    return { ok: true };
+  },
+
+  /**
+   * Muestra notificación temporal
+   */
+  notificar(mensaje, tipo = 'info', duracion = 3000) {
+    const notif = document.createElement('div');
+    notif.className = `notif notif-${tipo}`;
+    notif.textContent = mensaje;
+    notif.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 10000;
+      animation: slideIn 0.3s ease;
+      ${tipo === 'success' ? 'background: #4caf50; color: white;' : ''}
+      ${tipo === 'error' ? 'background: #f44336; color: white;' : ''}
+      ${tipo === 'info' ? 'background: #2196f3; color: white;' : ''}
+    `;
+    document.body.appendChild(notif);
+    setTimeout(() => notif.remove(), duracion);
+  },
+
+  /**
+   * Spinner carga
+   */
+  mostrarCarga(mostrar = true) {
+    let spinner = document.querySelector('.spinner');
+    if (!spinner) {
+      spinner = document.createElement('div');
+      spinner.className = 'spinner';
+      spinner.innerHTML = `<div class="spinner-dot"></div>`;
+      document.body.appendChild(spinner);
+    }
+    spinner.style.display = mostrar ? 'flex' : 'none';
+  },
+
+  /**
+   * Espera (promesa)
+   */
+  esperar(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  },
+
+  /**
+   * LocalStorage helper
+   */
+  storage: {
+    set(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {
+        console.warn('Storage error:', e);
+      }
+    },
+    get(key) {
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : null;
+      } catch (e) {
+        console.warn('Storage error:', e);
+        return null;
+      }
+    },
+    remove(key) {
+      localStorage.removeItem(key);
+    },
+    clear() {
+      localStorage.clear();
+    }
+  },
+
+  /**
+   * API helper
+   */
+  fetch(url, opciones = {}) {
+    const config = {
+      method: opciones.method || 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...opciones.headers
+      },
+      ...opciones
+    };
+
+    if (opciones.body && typeof opciones.body !== 'string') {
+      config.body = JSON.stringify(opciones.body);
+    }
+
+    return fetch(url, config)
+      .then(r => r.json())
+      .catch(e => {
+        console.error('Fetch error:', e);
+        return { error: e.message };
+      });
+  },
+
+  /**
+   * Debounce (función que espera antes de ejecutar)
+   */
+  debounce(func, espera) {
+    let timeout;
+    return function(...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), espera);
+    };
+  },
+
+  /**
+   * Throttle (ejecuta máximo cada X ms)
+   */
+  throttle(func, limite) {
+    let anterior = 0;
+    return function(...args) {
+      const ahora = Date.now();
+      if (ahora - anterior >= limite) {
+        func(...args);
+        anterior = ahora;
+      }
+    };
+  },
+
+  /**
+   * Formatea fecha
+   */
+  formatearFecha(fecha = new Date()) {
+    return fecha.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  },
+
+  /**
+   * Copia al portapapeles
+   */
+  copiar(texto) {
+    navigator.clipboard.writeText(texto).then(() => {
+      this.notificar('Copiado al portapapeles', 'success');
+    });
+  }
+};
+
+// Exportar
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = Utils;
+}
