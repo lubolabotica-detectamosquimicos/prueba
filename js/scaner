@@ -1,0 +1,264 @@
+/**
+ * SCANNER.JS - Herramienta de crop/recorte de imagen
+ * EDITABLE: Cambiar sensibilidad, colores, comportamiento
+ */
+
+const Scanner = {
+  // Estado interno
+  state: {
+    fullDataUrl: null,
+    imgNaturalW: null,
+    imgNaturalH: null,
+    croppedDataUrl: null,
+    isDrawing: false,
+    startX: 0,
+    startY: 0,
+    endX: 0,
+    endY: 0,
+  },
+
+  // Configuración editable
+  config: {
+    minWidth: 50,      // Tamaño mínimo de selección
+    minHeight: 50,
+    strokeColor: '#53bb26',
+    strokeWidth: 2,
+    fillColor: 'rgba(83, 187, 38, 0.1)',
+    overlayColor: 'rgba(0, 0, 0, 0.95)',
+  },
+
+  /**
+   * Abre el overlay de crop
+   */
+  abrirOverlay(imageDataUrl) {
+    this.state.fullDataUrl = imageDataUrl;
+    const overlay = document.getElementById('crop-overlay');
+    const canvas = document.getElementById('crop-canvas');
+    
+    if (!overlay || !canvas) {
+      console.error('Elementos de crop no encontrados en HTML');
+      return;
+    }
+
+    overlay.style.display = 'flex';
+
+    const img = new Image();
+    img.onload = () => {
+      const maxWidth = window.innerWidth * 0.95;
+      const maxHeight = window.innerHeight * 0.8;
+      
+      let scale = 1;
+      if (img.width > maxWidth) scale = maxWidth / img.width;
+      if (img.height * scale > maxHeight) scale = maxHeight / img.height;
+
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      
+      this.state.imgNaturalW = img.width;
+      this.state.imgNaturalH = img.height;
+      canvas._img = img;
+      canvas._scale = scale;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      this.setupCanvasListeners(canvas);
+      this.mostrarPista();
+    };
+    img.src = imageDataUrl;
+  },
+
+  /**
+   * Configura listeners del canvas
+   */
+  setupCanvasListeners(canvas) {
+    const self = this;
+
+    canvas.addEventListener('mousedown', (e) => self.iniciarSeleccion(e, canvas));
+    canvas.addEventListener('mousemove', (e) => self.dibujarSeleccion(e, canvas));
+    canvas.addEventListener('mouseup', () => self.finalizarSeleccion(canvas));
+    canvas.addEventListener('mouseleave', () => self.finalizarSeleccion(canvas));
+
+    canvas.addEventListener('touchstart', (e) => self.iniciarSeleccion(e, canvas));
+    canvas.addEventListener('touchmove', (e) => self.dibujarSeleccion(e, canvas));
+    canvas.addEventListener('touchend', () => self.finalizarSeleccion(canvas));
+  },
+
+  /**
+   * Inicia selección
+   */
+  iniciarSeleccion(e, canvas) {
+    this.state.isDrawing = true;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    this.state.startX = clientX - rect.left;
+    this.state.startY = clientY - rect.top;
+  },
+
+  /**
+   * Dibuja selección en tiempo real
+   */
+  dibujarSeleccion(e, canvas) {
+    if (!this.state.isDrawing) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    this.state.endX = clientX - rect.left;
+    this.state.endY = clientY - rect.top;
+
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(canvas._img, 0, 0, canvas.width, canvas.height);
+
+    // Dibujar selección
+    const x = Math.min(this.state.startX, this.state.endX);
+    const y = Math.min(this.state.startY, this.state.endY);
+    const width = Math.abs(this.state.endX - this.state.startX);
+    const height = Math.abs(this.state.endY - this.state.startY);
+
+    ctx.fillStyle = this.config.fillColor;
+    ctx.fillRect(x, y, width, height);
+    ctx.strokeStyle = this.config.strokeColor;
+    ctx.lineWidth = this.config.strokeWidth;
+    ctx.strokeRect(x, y, width, height);
+
+    this.actualizarInfo(width, height);
+  },
+
+  /**
+   * Finaliza selección
+   */
+  finalizarSeleccion(canvas) {
+    this.state.isDrawing = false;
+  },
+
+  /**
+   * Confirma el crop
+   */
+  confirmarCrop(canvas) {
+    canvas = canvas || document.getElementById('crop-canvas');
+    if (!canvas) return;
+
+    const x = Math.min(this.state.startX, this.state.endX);
+    const y = Math.min(this.state.startY, this.state.endY);
+    const width = Math.abs(this.state.endX - this.state.startX);
+    const height = Math.abs(this.state.endY - this.state.startY);
+
+    // Validar mínimos
+    if (width < this.config.minWidth || height < this.config.minHeight) {
+      Utils.notificar('Selecciona un área más grande', 'error');
+      return;
+    }
+
+    // Escalar a imagen natural
+    const scale = canvas._scale;
+    const natX = x / scale;
+    const natY = y / scale;
+    const natW = width / scale;
+    const natH = height / scale;
+
+    // Crear canvas con la zona recortada
+    const cnv = document.getElementById('cnv2') || document.createElement('canvas');
+    cnv.width = natW;
+    cnv.height = natH;
+    
+    const ctx = cnv.getContext('2d');
+    ctx.drawImage(canvas._img, natX, natY, natW, natH, 0, 0, natW, natH);
+
+    this.state.croppedDataUrl = cnv.toDataURL('image/jpeg', 0.95);
+    
+    this.cerrarOverlay();
+    this.onCropConfirmado(this.state.croppedDataUrl);
+  },
+
+  /**
+   * Callback cuando se confirma crop (editable)
+   */
+  onCropConfirmado(imageDataUrl) {
+    // Aquí va tu lógica de qué hacer con la imagen recortada
+    Utils.notificar('Zona seleccionada — analizando...', 'info');
+    console.log('Imagen recortada lista para análisis');
+    
+    // Ejemplo: enviar a análisis
+    // Api.analizarImagen(imageDataUrl);
+  },
+
+  /**
+   * Cierra overlay
+   */
+  cerrarOverlay() {
+    const overlay = document.getElementById('crop-overlay');
+    if (overlay) overlay.style.display = 'none';
+    this.ocultarPista();
+  },
+
+  /**
+   * Limpia selección
+   */
+  resetCrop(canvas) {
+    canvas = canvas || document.getElementById('crop-canvas');
+    if (!canvas || !canvas._img) return;
+
+    this.state.startX = 0;
+    this.state.startY = 0;
+    this.state.endX = 0;
+    this.state.endY = 0;
+
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(canvas._img, 0, 0, canvas.width, canvas.height);
+    
+    this.ocultarInfo();
+  },
+
+  /**
+   * Actualiza texto de info
+   */
+  actualizarInfo(width, height) {
+    const info = document.getElementById('crop-preview-info');
+    const txt = document.getElementById('crop-preview-txt');
+    
+    if (info && txt) {
+      info.style.display = 'flex';
+      txt.textContent = `Zona: ${Math.round(width)}×${Math.round(height)}px`;
+    }
+  },
+
+  /**
+   * Oculta info
+   */
+  ocultarInfo() {
+    const info = document.getElementById('crop-preview-info');
+    if (info) info.style.display = 'none';
+  },
+
+  /**
+   * Muestra pista
+   */
+  mostrarPista() {
+    const hint = document.getElementById('crop-hint-badge');
+    if (hint) hint.style.opacity = '1';
+  },
+
+  /**
+   * Oculta pista
+   */
+  ocultarPista() {
+    const hint = document.getElementById('crop-hint-badge');
+    if (hint) hint.style.opacity = '0';
+  },
+
+  /**
+   * Obtiene imagen recortada
+   */
+  obtenerImagenRecortada() {
+    return this.state.croppedDataUrl;
+  }
+};
+
+// Exportar
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = Scanner;
+}
