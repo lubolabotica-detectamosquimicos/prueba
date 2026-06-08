@@ -1,0 +1,58 @@
+:root {
+  /* Brand colors */
+  --brand-green: #53bb26;
+  --brand-amber: #ebb414;
+  --brand-red: #ff6161;
+
+  /* Semantic colors */
+  --green-dark: #2d6b0f;
+  --green-light: #eaf7e1;
+  --green-border: #b8e59a;
+
+  --amber-light: #fef8e6;
+  --red-light: #fff0f0;
+
+  /* Neutral grays */
+  --gray-50: #f8f7f4;
+  --gray-100: #f0ede8;
+  --bg: #fafaf8;
+  --surface: #ffffff;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-med: rgba(0, 0, 0, 0.13);
+
+  /* Text colors */
+  --text: #1a1916;
+  --text-2: #5a5751;
+  --text-3: #9e9b94;
+  --accent: #53bb26;
+
+  /* Spacing & radius */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+
+  /* Typography */
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-disp: 'DM Serif Display', Georgia, serif;
+
+  /* Shadows */
+  --sh-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
