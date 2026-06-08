@@ -1,0 +1,99 @@
+/**
+ * SEMAFORO.JS - Control visual del semáforo
+ * Archivo EXTERNO y EDITABLE
+ * Carga DESPUÉS del HTML para optimizar renderizado
+ */
+
+const Semaforo = {
+  /**
+   * Determina resultado basado en ingredientes
+   * @param {Array} ingredientes - Lista de elementos
+   * @returns {Object} {color, texto, peligroso}
+   */
+  analizar(ingredientes) {
+    if (!Array.isArray(ingredientes) || ingredientes.length === 0) {
+      return { color: 'gray', texto: 'SIN DATOS', peligroso: false };
+    }
+
+    const tieneRojo = ingredientes.some(i => i.categoria === 'ROJO');
+    if (tieneRojo) {
+      return { color: 'red', texto: '🚫 NO CONSUMIR', peligroso: true };
+    }
+
+    const tieneAmarillo = ingredientes.some(i => i.categoria === 'AMARILLO');
+    if (tieneAmarillo) {
+      return { color: 'amber', texto: '⚠️ CONSUMO OCASIONAL', peligroso: false };
+    }
+
+    return { color: 'green', texto: '✓ CONSUMIR', peligroso: false };
+  },
+
+  /**
+   * Actualiza UI del semáforo
+   * @param {Object} resultado - Del método analizar()
+   */
+  mostrar(resultado) {
+    const container = document.querySelector('.semaforo-3d');
+    if (!container) return;
+
+    // Limpiar
+    container.querySelectorAll('.sem-ball').forEach(b => {
+      b.classList.remove('active', 'red', 'amber', 'green');
+    });
+
+    // Mapear color a índice (0=rojo, 1=amarillo, 2=verde)
+    const mapa = { red: 0, amber: 1, green: 2 };
+    const idx = mapa[resultado.color];
+    
+    if (idx !== undefined) {
+      const items = container.querySelectorAll('.sem-item');
+      items[idx].classList.add('active');
+      items[idx].querySelector('.sem-ball').classList.add('active', resultado.color);
+    }
+
+    // Banner si es peligroso
+    if (resultado.peligroso) {
+      this.mostrarBanner(resultado.texto);
+    } else {
+      this.ocultarBanner();
+    }
+  },
+
+  /**
+   * Muestra banner rojo de peligro
+   */
+  mostrarBanner(texto) {
+    let banner = document.querySelector('.banner-peligro');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.className = 'banner-peligro';
+      document.body.insertBefore(banner, document.body.firstChild);
+    }
+    banner.textContent = texto;
+    banner.style.display = 'block';
+  },
+
+  /**
+   * Oculta banner
+   */
+  ocultarBanner() {
+    const banner = document.querySelector('.banner-peligro');
+    if (banner) banner.style.display = 'none';
+  },
+
+  /**
+   * Cuenta químicos por categoría
+   */
+  contar(ingredientes) {
+    return {
+      rojo: ingredientes.filter(i => i.categoria === 'ROJO').length,
+      amarillo: ingredientes.filter(i => i.categoria === 'AMARILLO').length,
+      verde: ingredientes.filter(i => i.categoria === 'VERDE').length,
+    };
+  }
+};
+
+// Exportar para uso en HTML
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = Semaforo;
+}
