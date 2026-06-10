@@ -1,50 +1,58 @@
 # 🌿 LuBo La Botica
 
-Detector inteligente de químicos nocivos en ingredientes de productos cotidianos.
+**Detector inteligente de químicos nocivos en ingredientes de productos cotidianos.**
 
-**Deploy:** [vidasinquimicoslubo-labotica.vercel.app](https://vidasinquimicoslubo-labotica.vercel.app)
+**Deploy en vivo:** [vidasinquimicoslubo-labotica.vercel.app](https://vidasinquimicoslubo-labotica.vercel.app)
+
+**Dominio personalizado:** [lubo-labotica.com](https://lubo-labotica.com)
 
 ---
 
-## 📂 Estructura
+## 📋 Descripción
+
+LuBo La Botica es una aplicación web que detecta químicos nocivos en ingredientes de:
+- 🍔 Alimentos procesados
+- 💄 Productos cosméticos
+- 🧴 Productos de limpieza y cuidado personal
+
+**Cómo funciona:**
+1. Tomas foto o subes imagen de etiqueta de ingredientes
+2. Herramienta crop permite seleccionar el área de ingredientes
+3. IA Gemini extrae el texto de la etiqueta
+4. Base de datos externa (Google Sheets) clasifica cada ingrediente
+5. Semáforo visual (🔴🟡🟢) muestra el nivel de peligro
+
+---
+
+## 🏗️ Estructura del Proyecto
 
 ```
-.
-├── index.html              ← Aplicación (HTML)
-├── vercel.json             ← Configuración deploy
+lubo-labotica/
+├── index.html                 ← Aplicación web (HTML principal)
+├── vercel.json               ← Configuración Vercel
+├── .gitignore                ← Archivos ignorados en Git
+├── README.md                 ← Este archivo
 │
 ├── css/
-│   ├── variables.css      ← Colores, tipografía, espaciado
-│   └── styles.css         ← Estilos de UI
+│   ├── variables.css         ← Variables CSS (colores, tipografía)
+│   └── styles.css            ← [FALTA - Estilos UI adicionales]
 │
 ├── js/
-│   ├── scanner.js         ← Herramienta crop/recorte
-│   ├── semaforo.js        ← Lógica visual del semáforo
-│   └── utils.js           ← Funciones reutilizables
+│   ├── scanner.js            ← Herramienta crop/recorte con canvas
+│   ├── semaforo.js           ← [FALTA - Lógica visual del semáforo]
+│   └── utils.js              ← Funciones utilitarias reutilizables
 │
 ├── data/
-│   └── db-naturales.js    ← Base de datos de ingredientes
+│   └── db-naturales.js       ← Base de datos (SOLO lee Google Sheets)
 │
 ├── api/
-│   ├── analizar.js        ← Análisis con Gemini API
-│   └── stats.js           ← Estadísticas
+│   ├── analizar.js           ← Análisis con Gemini API
+│   └── stats.js              ← Estadísticas de uso
 │
 └── assets/
     └── logos/
-        └── leaf.png       ← Logo
+        └── leaf.png          ← Logo de la app
 ```
-
----
-
-## 🎯 Características
-
-- ✅ Detector de químicos nocivos en tiempo real
-- ✅ Herramienta crop/recorte para análisis preciso
-- ✅ Semáforo visual (rojo/amarillo/verde)
-- ✅ Base de datos de ingredientes naturales
-- ✅ Estadísticas de uso local
-- ✅ Offline-first (localStorage)
-- ✅ Mobile-friendly (PWA ready)
 
 ---
 
@@ -52,26 +60,35 @@ Detector inteligente de químicos nocivos en ingredientes de productos cotidiano
 
 ### Vercel (Recomendado)
 
+**Primera vez:**
 ```bash
-# 1. Conectar repo a Vercel
+# 1. Conectar repositorio
 vercel link
 
-# 2. Deploy automático on push
+# 2. Configurar variables de entorno (en Vercel dashboard)
+GOOGLE_API_KEY=tu_api_key_de_gemini
+ADMIN_KEY=tu_admin_key_secreto
+```
+
+**Deploy automático:**
+```bash
+# Cada push a main despliega automáticamente
 git push origin main
 ```
 
-Vercel automáticamente:
-- Detecta `/api/*` como serverless functions
-- Sirve `/` como estática
-- Deploy en 1-2 minutos
+**Deploy manual:**
+```bash
+vercel deploy
+```
 
----
-
-## 🔧 Desarrollo Local
+### Local
 
 ```bash
-# Servidor HTTP local (cualquiera sirve)
+# Opción 1: Python
 python3 -m http.server 8000
+
+# Opción 2: Node.js
+npx http-server
 
 # Abre en navegador
 http://localhost:8000
@@ -79,138 +96,264 @@ http://localhost:8000
 
 ---
 
-## 📝 Editar la App
+## 🔑 Variables de Entorno
 
-### Colores y tipografía
-→ `css/variables.css` línea 19-28
+Agregar en **Vercel Dashboard** → **Settings** → **Environment Variables**:
 
-```css
---brand-green: #53bb26;      /* Cambiar aquí */
---font-body: 'DM Sans'...
-```
+| Variable | Descripción | Valor |
+|----------|------------|-------|
+| `GOOGLE_API_KEY` | API Key de Google Gemini | Obtener en [aistudio.google.com](https://aistudio.google.com) |
+| `ADMIN_KEY` | Clave para acceder a estadísticas | Tu clave segura |
+| `FORMSPREE_ID` | ID de Formspree (opcional) | Para enviar formularios |
 
-### Ingredientes/Químicos
-→ `data/db-naturales.js` línea 10-35
-
-```javascript
-IngredientesDB.agregar('Parabeno', 'ROJO', 80, 'Conservante natural');
-```
-
-### Lógica del semáforo
-→ `js/semaforo.js` línea 15-35
-
-```javascript
-Semaforo.analizar(ingredientes)  // Determina resultado
-Semaforo.mostrar(resultado)      // Actualiza UI
-```
-
-### Herramienta crop
-→ `js/scanner.js` línea 20-26
-
-```javascript
-config: {
-  minWidth: 50,           // Tamaño mínimo
-  strokeColor: '#53bb26', // Color selección
-}
-```
+**Obtener GOOGLE_API_KEY:**
+1. Ve a [aistudio.google.com](https://aistudio.google.com)
+2. Crea un proyecto
+3. Activa Gemini API
+4. Genera API Key
+5. Copia y pega en Vercel
 
 ---
 
-## 📚 APIs
+## 📊 Base de Datos Externa
+
+**Todo** viene del Google Sheets:
+
+```
+https://docs.google.com/spreadsheets/d/1QLmkn8hfq_vkBv3IcaJNRI_ly6f5HorZ/edit?gid=2117305422
+```
+
+**Estructura:**
+- **Columna A:** Categoria_Color (ROJO, AMARILLO, VERDE)
+- **Columna B:** ingrediente (nombre)
+- **Columna C:** Motivo (descripción)
+- **Columna D:** Nivel de nocividad (%)
+
+**Lógica del semáforo:**
+- 🔴 **ROJO:** Nocividad > 30% O categoría ROJO explícita
+- 🟡 **AMARILLO:** Categoría AMARILLO
+- 🟢 **VERDE:** Todo lo demás
+
+---
+
+## 🛠️ APIs
 
 ### POST /api/analizar
-Analiza imagen de ingredientes
+
+Analiza imagen con Gemini, retorna ingredientes clasificados.
 
 **Request:**
-```
-Content-Type: multipart/form-data
-image: <File>
+```javascript
+POST /api/analizar
+Content-Type: application/json
+
+{
+  "imagen": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
+}
 ```
 
 **Response:**
 ```json
 {
+  "success": true,
   "ingredientes": [
     {
-      "nombre": "Óxido de titanio",
+      "nombre": "Bromato de potasio",
+      "categoria": "ROJO",
+      "nocividad": 90,
+      "motivo": "Blanqueador proscrito en muchos países"
+    },
+    {
+      "nombre": "Aceite de coco",
       "categoria": "VERDE",
-      "nocividad": 25
+      "nocividad": 0,
+      "motivo": "Hidratante natural"
     }
   ],
-  "texto_extraido": "...",
-  "timestamp": "2024-06-08T..."
+  "noEncontrados": ["E122", "xantana"],
+  "semaforo": {
+    "categoria": "ROJO",
+    "mensaje": "Contiene químicos nocivos (>30%)"
+  },
+  "confianza": 0.92,
+  "timestamp": "2024-06-08T14:35:22Z",
+  "bdVersion": 400
+}
+```
+
+### GET /api/stats
+
+Obtiene estadísticas de uso (requiere admin key).
+
+**Request:**
+```
+GET /api/stats?key=tu_admin_key
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "mensaje": "Estadísticas (requiere base de datos configurada)",
+  "timestamp": "2024-06-08T14:35:22Z"
 }
 ```
 
 ### POST /api/stats
-Registra estadísticas de uso
+
+Registra un evento de uso.
+
+**Request:**
+```json
+{
+  "tipo": "analisis_completado",
+  "datos": {
+    "total_ingredientes": 15,
+    "categoria_resultado": "ROJO"
+  }
+}
+```
 
 ---
 
-## 🔑 Variables de Entorno
+## 🎨 Personalización
 
-Agregar en Vercel dashboard → Settings → Environment Variables:
+### Cambiar colores
 
+Edita `css/variables.css`:
+
+```css
+:root {
+    --brand-green: #53bb26;      /* Color principal */
+    --color-rojo: #ef4444;       /* Color ROJO semáforo */
+    --color-amarillo: #fbbf24;   /* Color AMARILLO semáforo */
+}
 ```
-GOOGLE_API_KEY=tu_api_key_aqui
-FORMSPREE_ID=tu_formspree_id_aqui
+
+### Cambiar tipografía
+
+En `css/variables.css`:
+
+```css
+--font-body: 'Fredoka', sans-serif;  /* Cambiar font */
 ```
+
+### Agregar más categorías
+
+Edita Google Sheets (no el código):
+1. Abre el [spreadsheet](https://docs.google.com/spreadsheets/d/1QLmkn8hfq_vkBv3IcaJNRI_ly6f5HorZ)
+2. Agrega fila con: Categoría | Ingrediente | Motivo | Nocividad
+3. Automáticamente se actualiza en la app
 
 ---
 
 ## 📱 Navegadores Soportados
 
-- Chrome/Edge (v90+)
-- Firefox (v88+)
-- Safari (v14+)
-- Mobile browsers (iOS Safari, Chrome Mobile)
+- ✅ Chrome/Edge 90+
+- ✅ Firefox 88+
+- ✅ Safari 14+
+- ✅ Chrome Mobile
+- ✅ iOS Safari 14+
 
 ---
 
-## 📊 Estadísticas
+## 🔐 Seguridad
 
-El app guarda localmente:
-- Imágenes analizadas
-- Químicos encontrados
+- ✅ HTTPS en Vercel
+- ✅ CORS configurado
+- ✅ Admin key para estadísticas
+- ✅ Imágenes procesadas localmente (no almacenadas)
+- ✅ API Key de Gemini en env vars (no expuesto)
+
+---
+
+## 📈 Estadísticas
+
+La app registra (localStorage):
+- Análisis completados
+- Ingredientes detectados
+- Categorías encontradas
 - Historial de búsquedas
-- Preferencias del usuario
+- Preferencias usuario
 
-(Opcional: enviar a Formspree para análisis)
+**Opcional:** Enviar a Formspree para análisis remoto.
 
 ---
 
-## 🛠️ Stack
+## 🐛 Troubleshooting
 
-- **Frontend:** Vanilla JavaScript (ES6+)
-- **Styling:** CSS3 (variables, grid, flexbox)
-- **API:** Google Gemini AI
-- **Hosting:** Vercel (serverless + static)
-- **Storage:** localStorage + Formspree
-- **PWA:** Service Worker ready
+### "Error: No se puede acceder a la cámara"
+- Verifica permisos en navegador
+- En mobile, usa HTTPS
+- Intenta recarga de página
+
+### "Gemini API Error"
+- Verifica `GOOGLE_API_KEY` en Vercel
+- Comprueba límites de uso en aistudio.google.com
+- Revisa console (F12) para detalles
+
+### "Base de datos no carga"
+- Verifica URL del Google Sheets
+- Comprueba que sea público o compartido
+- Revisa que sea archivo CSV válido
+
+### "Semáforo no funciona"
+- Verifica que ingredientes estén en Google Sheets
+- Busca por nombre exacto
+- Comprueba columnas correctas (A=Categoría, D=Nocividad)
+
+---
+
+## 🚧 Roadmap
+
+- [ ] Comparador de productos
+- [ ] App nativa (React Native)
+- [ ] Escaneo de código QR
+- [ ] Alertas de ingredientes nuevos
+- [ ] Historial sincronizado en nube
+- [ ] Modo offline mejorado
+- [ ] Traducción a más idiomas
+- [ ] Dark mode
+
+---
+
+## 👥 Contribuir
+
+Para agregar ingredientes o corregir datos:
+
+1. Abre el [Google Sheets](https://docs.google.com/spreadsheets/d/1QLmkn8hfq_vkBv3IcaJNRI_ly6f5HorZ)
+2. Agrega/edita fila
+3. Los cambios aparecen automáticamente en la app
+
+Para reportar bugs:
+- Abre un issue en GitHub
+- O contáctanos en lubo-labotica.com
 
 ---
 
 ## 📄 Licencia
 
-MIT
+MIT - Libre para usar, modificar y distribuir.
 
 ---
 
-## 👤 Contacto
+## 📞 Contacto
 
-**Email:** [tu-email@lubo.com](mailto:tu-email@lubo.com)  
-**Web:** [lubo-labotica.com](https://lubo-labotica.com)
-
----
-
-## 🚀 Roadmap
-
-- [ ] Análisis OCR mejorado
-- [ ] Comparador de productos
-- [ ] Alertas de químicos nuevos
-- [ ] Integración con escáneres de código QR
-- [ ] App nativa (React Native)
+- **Email:** [lubo-labotica@gmail.com](mailto:lubo-labotica@gmail.com)
+- **Web:** [lubo-labotica.com](https://lubo-labotica.com)
+- **GitHub:** [github.com/lubo-labotica](https://github.com/lubo-labotica)
 
 ---
 
-**Hecho con 💚 por el equipo de LuBo La Botica**
+## 🙏 Agradecimientos
+
+- 🤖 Google Gemini Vision API
+- 📊 Google Sheets como base de datos
+- 🚀 Vercel por hosting
+- 💚 Comunidad de vida sin químicos
+
+---
+
+**Hecho con 💚 para una vida más saludable y sin químicos nocivos.**
+
+*Última actualización: Junio 8, 2024*
