@@ -1,271 +1,272 @@
-// ============================================================
-// LuBo La Botica — API: /api/analizar
-// Analiza imágenes con Gemini IA y cruza con Google Sheets
-// Columnas Sheet: A=color, B=ingrediente, C=motivo
-// ============================================================
+/**
+ * API: /api/analizar
+ * 
+ * Analyzes product ingredient labels using Google Gemini Vision
+ * Classifies ingredients using ONLY the external Google Sheets database
+ * No internal databases - everything comes from the external source
+ */
 
-const SHEET_ID = '1QLmkn8hfq_vkBv3IcaJNRI_ly6f5HorZ';
-const SHEET_RANGE = 'A2:C'; // desde fila 2 (fila 1 es encabezado)
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Lee las 3 primeras columnas de la Google Sheet pública
-async function leerSheet() {
-  try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&range=${SHEET_RANGE}`;
-    const res = await fetch(url);
-    const text = await res.text();
+// Initialize Gemini
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
-    // Google devuelve JSONP, hay que limpiar el wrapper
-    const clean = text.replace(/^.*?(\{.*\}).*?$/s, '$1');
-    const json = JSON.parse(clean);
+// Google Sheets URL
+const GOOGLE_SHEETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1QLmkn8hfq_vkBv3IcaJNRI_ly6f5HorZ/export?format=csv&gid=2117305422';
 
-    const filas = json.table.rows;
-    return filas
-      .map(row => ({
-        color:       (row.c[0]?.v || '').toString().trim().toUpperCase(),
-        ingrediente: (row.c[1]?.v || '').toString().trim(),
-        motivo:      (row.c[2]?.v || '').toString().trim(),
-      }))
-      .filter(r => r.ingrediente); // ignorar filas vacías
-  } catch (err) {
-    console.error('Error leyendo Google Sheet:', err.message);
-    return [];
-  }
+/**
+ * Fetch and parse Google Sheets database
+ */
+async function obtenerBaseDatos() {
+    try {
+        const response = await fetch(GOOGLE_SHEETS_CSV_URL);
+        const csv = await response.text();
+        return parsearCSV(csv);
+    } catch (error) {
+        console.error('Error fetching database:', error);
+        return [];
+    }
 }
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
+/**
+ * Parse CSV to ingredients array
+ */
+function parsearCSV(csv) {
+    const lines = csv.trim().split('\n');
+    const ingredientes = [];
+    
+    // Skip header
+    for (let i = 1; i < lines.length; i++) {
+        const parts = parsearLineaCSV(lines[i]);
+        
+        if (parts.length >= 4) {
+            const categoria = parts[0].trim().toUpperCase();
+            const nombre = parts[1].trim();
+            const motivo = parts[2].trim();
+            const nocividad = parseInt(parts[3]) || 0;
+            
+            if (['ROJO', 'AMARILLO', 'VERDE'].includes(categoria) && nombre) {
+                ingredientes.push({
+                    categoria,
+                    nombre,
+                    motivo,
+                    nocividad
+                });
+            }
+        }
+    }
+    
+    return ingredientes;
+}
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'API key no configurada' });
+/**
+ * Parse CSV line handling quotes and commas
+ */
+function parsearLineaCSV(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            result.push(current);
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    
+    result.push(current);
+    return result;
+}
 
-  try {
-    const { imageBase64, mediaType, userId, userName } = req.body;
-    if (!imageBase64) return res.status(400).json({ error: 'Se requiere una imagen' });
-
-    // ── LEER BASE DE DATOS DESDE GOOGLE SHEETS ───────────────
-    const dbSheet = await leerSheet();
-
-    // Separar por color
-    const rojosSheet     = dbSheet.filter(r => r.color === 'ROJO');
-    const amarillosSheet = dbSheet.filter(r => r.color === 'AMARILLO');
-    const verdesSheet    = dbSheet.filter(r => r.color === 'VERDE');
-
-    const nombresRojos     = rojosSheet.map(r => r.ingrediente);
-    const nombresAmarillos = amarillosSheet.map(r => r.ingrediente);
-    const nombresVerdes    = verdesSheet.map(r => r.ingrediente);
-
-    const prompt = `Analiza esta imagen de una etiqueta de producto. Tu tarea es extraer la lista de ingredientes y clasificarlos.
-
-INSTRUCCIONES:
-1. Busca secciones: "Ingredients:", "Ingredientes:", "INCI:", "Composición:", "Contiene:", "Componentes:".
-2. Lee TODO el texto visible aunque sea pequeño, en cualquier idioma.
-3. Compara CADA ingrediente encontrado contra estas listas:
-
-INGREDIENTES ROJOS (peligrosos - clasificacion ROJO si aparece 1 o más):
-${nombresRojos.join(', ') || '(ninguno cargado)'}
-
-INGREDIENTES AMARILLOS (precaución):
-${nombresAmarillos.join(', ') || '(ninguno cargado)'}
-
-INGREDIENTES VERDES (seguros):
-${nombresVerdes.join(', ') || '(ninguno cargado)'}
-
-4. Ingredientes no listados: clasifícalos como naturales (plantas/frutas/aceites/minerales) o sinteticos_desconocidos.
-
-REGLA SEMÁFORO:
-- rojo: si 1 o más ingredientes están en la lista roja
-- amarillo: si hay amarillos pero ningún rojo
-- verde: si no hay ningún ingrediente nocivo
-
-RESPONDE SOLO CON ESTE JSON (sin markdown, sin texto adicional):
+/**
+ * Extract text from image using Gemini Vision
+ */
+async function extraerTextoDeImagen(base64Image) {
+    try {
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        
+        const prompt = `
+IMPORTANTE: Extrae SOLO la lista de ingredientes de esta etiqueta de producto.
+Retorna UN ÚNICO objeto JSON válido con este formato exacto:
 {
-  "ingredientes": ["lista completa de todos los ingredientes encontrados"],
-  "coincidencias_rojas": ["ingredientes que coinciden con la lista ROJA"],
-  "coincidencias_amarillas": ["ingredientes que coinciden con la lista AMARILLA"],
-  "naturales": ["ingredientes naturales no listados"],
-  "sinteticos_desconocidos": ["sintéticos que no están en ninguna lista"],
-  "clasificacion_sugerida": "rojo|amarillo|verde",
-  "porcentaje_nocivos": 0
+  "ingredientes": ["nombre1", "nombre2", "nombre3"],
+  "confianza": 0.95
 }
 
-Si no hay ingredientes legibles responde exactamente:
-{"error":"imagen_no_legible","ingredientes":[],"coincidencias_rojas":[],"coincidencias_amarillas":[],"naturales":[],"sinteticos_desconocidos":[],"clasificacion_sugerida":"verde","porcentaje_nocivos":0}`;
+Notas:
+- Incluye TODOS los ingredientes visibles
+- Usa nombres en ESPAÑOL cuando sea posible
+- No agregues explicaciones, solo JSON
+- Si no puedes ver ingredientes, retorna lista vacía: {"ingredientes": [], "confianza": 0}
+`;
 
-    // Intento 1: Flash rápido
-    let result = await llamarGemini(apiKey, imageBase64, mediaType, prompt, 'gemini-1.5-flash');
-
-    // Intento 2: Pro si Flash falla
-    if (!result || result.error === 'imagen_no_legible' || !result.ingredientes?.length) {
-      console.log('Flash no leyó, intentando con Pro...');
-      result = await llamarGemini(apiKey, imageBase64, mediaType, prompt, 'gemini-1.5-pro');
+        const response = await model.generateContent([
+            {
+                inlineData: {
+                    mimeType: 'image/jpeg',
+                    data: base64Image
+                }
+            },
+            prompt
+        ]);
+        
+        const text = response.response.text();
+        
+        // Try to parse JSON from response
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+        }
+        
+        return { ingredientes: [], confianza: 0 };
+    } catch (error) {
+        console.error('Error extracting text:', error);
+        return { ingredientes: [], confianza: 0 };
     }
-
-    // Intento 3: Prompt simplificado
-    if (!result || result.error === 'imagen_no_legible' || !result.ingredientes?.length) {
-      console.log('Intentando con prompt simplificado...');
-      const promptSimple = `Lee los ingredientes de esta etiqueta. Responde SOLO con JSON:
-{"ingredientes":["lista"],"coincidencias_rojas":[],"coincidencias_amarillas":[],"naturales":[],"sinteticos_desconocidos":[],"clasificacion_sugerida":"verde","porcentaje_nocivos":0}`;
-      result = await llamarGemini(apiKey, imageBase64, mediaType, promptSimple, 'gemini-1.5-pro');
-    }
-
-    if (!result) {
-      return res.status(200).json({
-        error: 'imagen_no_legible',
-        ingredientes: [], coincidencias_rojas: [], coincidencias_amarillas: [],
-        naturales: [], sinteticos_desconocidos: [],
-        clasificacion_sugerida: 'verde', porcentaje_nocivos: 0
-      });
-    }
-
-    // ── CRUCE MANUAL CON LA SHEET (verificación extra) ───────
-    if (result.ingredientes?.length && dbSheet.length) {
-      const ingLower = result.ingredientes.map(i => i.toLowerCase());
-
-      const extraRojos = rojosSheet
-        .filter(r => ingLower.some(i =>
-          i.includes(r.ingrediente.toLowerCase()) ||
-          r.ingrediente.toLowerCase().includes(i)
-        ))
-        .map(r => r.ingrediente);
-
-      const extraAmarillos = amarillosSheet
-        .filter(r => ingLower.some(i =>
-          i.includes(r.ingrediente.toLowerCase()) ||
-          r.ingrediente.toLowerCase().includes(i)
-        ))
-        .map(r => r.ingrediente);
-
-      // Unir detecciones de Gemini + cruce manual
-      result.coincidencias_rojas     = [...new Set([...(result.coincidencias_rojas || []), ...extraRojos])];
-      result.coincidencias_amarillas = [...new Set([...(result.coincidencias_amarillas || []), ...extraAmarillos])];
-
-      // Recalcular clasificación y porcentaje con datos reales de la Sheet
-      const total   = result.ingredientes.length;
-      const nocivos = result.coincidencias_rojas.length + result.coincidencias_amarillas.length;
-      result.porcentaje_nocivos = total > 0 ? Math.round((nocivos / total) * 100) : 0;
-
-      if (result.coincidencias_rojas.length > 0) {
-        result.clasificacion_sugerida = 'rojo';
-      } else if (result.coincidencias_amarillas.length > 0) {
-        result.clasificacion_sugerida = 'amarillo';
-      } else {
-        result.clasificacion_sugerida = 'verde';
-      }
-
-      // Agregar motivos desde la Sheet para mostrar en la UI
-      result.motivos = [
-        ...result.coincidencias_rojas.map(nombre => {
-          const r = rojosSheet.find(x => x.ingrediente.toLowerCase() === nombre.toLowerCase());
-          return { nombre, color: 'ROJO', motivo: r?.motivo || '' };
-        }),
-        ...result.coincidencias_amarillas.map(nombre => {
-          const r = amarillosSheet.find(x => x.ingrediente.toLowerCase() === nombre.toLowerCase());
-          return { nombre, color: 'AMARILLO', motivo: r?.motivo || '' };
-        }),
-      ];
-    }
-
-    // Registrar stats si se provee userId
-    if (userId && result.ingredientes?.length > 0) {
-      try {
-        await registrarStats(userId, userName || 'Usuario', result);
-      } catch (statsErr) {
-        console.log('Stats no guardadas (no crítico):', statsErr.message);
-      }
-    }
-
-    return res.status(200).json(result);
-
-  } catch (error) {
-    console.error('Error en /api/analizar:', error);
-    return res.status(500).json({
-      error: 'Error interno', detalle: error.message,
-      ingredientes: [], coincidencias_rojas: [], coincidencias_amarillas: [],
-      naturales: [], sinteticos_desconocidos: [],
-      clasificacion_sugerida: 'verde', porcentaje_nocivos: 0
-    });
-  }
 }
 
-async function llamarGemini(apiKey, imageBase64, mediaType, prompt, modelo) {
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { inline_data: { mime_type: mediaType || 'image/jpeg', data: imageBase64 } },
-              { text: prompt }
-            ]
-          }],
-          generationConfig: { temperature: 0.05, topP: 0.9, maxOutputTokens: 4096 },
-          safetySettings: [
-            { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
-          ]
-        })
-      }
+/**
+ * Classify ingredients against database
+ */
+function clasificarIngredientes(nombresIngredientes, baseDatos) {
+    const resultados = [];
+    const ingredientesNoEncontrados = [];
+    
+    for (const nombre of nombresIngredientes) {
+        const termino = nombre.toLowerCase().trim();
+        
+        // Search in database
+        const encontrado = baseDatos.find(ing =>
+            ing.nombre.toLowerCase().includes(termino) ||
+            termino.includes(ing.nombre.toLowerCase())
+        );
+        
+        if (encontrado) {
+            resultados.push({
+                nombre: encontrado.nombre,
+                categoria: encontrado.categoria,
+                nocividad: encontrado.nocividad,
+                motivo: encontrado.motivo || ''
+            });
+        } else {
+            ingredientesNoEncontrados.push(nombre);
+        }
+    }
+    
+    return { clasificados: resultados, noEncontrados: ingredientesNoEncontrados };
+}
+
+/**
+ * Determine overall semaforo color based on ingredients
+ */
+function determinarSemaforo(ingredientes) {
+    if (ingredientes.length === 0) {
+        return { categoria: 'VERDE', mensaje: 'Sin ingredientes detectados' };
+    }
+    
+    // Check for ROJO (>30% nocividad or explicit ROJO category)
+    const tieneRojo = ingredientes.some(ing => 
+        ing.categoria === 'ROJO' || ing.nocividad > 30
     );
-
-    const data = await response.json();
-    if (!response.ok || !data.candidates?.[0]?.content?.parts?.[0]?.text) {
-      console.error(`Error ${modelo}:`, JSON.stringify(data));
-      return null;
+    
+    if (tieneRojo) {
+        return { 
+            categoria: 'ROJO', 
+            mensaje: 'Contiene químicos nocivos (>30% nocividad)' 
+        };
     }
-
-    const text  = data.candidates[0].content.parts[0].text;
-    const clean = text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
-    const jsonMatch = clean.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
-
-    return JSON.parse(jsonMatch[0]);
-  } catch (err) {
-    console.error(`Error llamando ${modelo}:`, err.message);
-    return null;
-  }
+    
+    // Check for AMARILLO
+    const tieneAmarillo = ingredientes.some(ing => ing.categoria === 'AMARILLO');
+    
+    if (tieneAmarillo) {
+        return { 
+            categoria: 'AMARILLO', 
+            mensaje: 'Contiene ingredientes que requieren precaución' 
+        };
+    }
+    
+    // All VERDE
+    return { 
+        categoria: 'VERDE', 
+        mensaje: 'Todos los ingredientes son seguros' 
+    };
 }
 
-async function registrarStats(userId, userName, resultado) {
-  const fs = await import('fs/promises');
-  const statsFile = '/tmp/lubo_stats.json';
-  let stats = {};
-  try {
-    const raw = await fs.readFile(statsFile, 'utf8');
-    stats = JSON.parse(raw);
-  } catch { stats = {}; }
-
-  if (!stats[userId]) {
-    stats[userId] = {
-      nombre: userName, usos: 0,
-      ingredientes_detectados: [], quimicos_encontrados: [],
-      primera_vez: new Date().toISOString(), ultima_vez: new Date().toISOString()
-    };
-  }
-  stats[userId].usos += 1;
-  stats[userId].ultima_vez = new Date().toISOString();
-  stats[userId].nombre = userName;
-
-  const nocivos = [
-    ...(resultado.coincidencias_rojas    || []),
-    ...(resultado.coincidencias_amarillas || [])
-  ];
-  (resultado.ingredientes || []).forEach(i => {
-    if (!stats[userId].ingredientes_detectados.includes(i))
-      stats[userId].ingredientes_detectados.push(i);
-  });
-  nocivos.forEach(q => {
-    if (!stats[userId].quimicos_encontrados.includes(q))
-      stats[userId].quimicos_encontrados.push(q);
-  });
-
-  await fs.writeFile(statsFile, JSON.stringify(stats, null, 2));
+/**
+ * Main handler
+ */
+export default async function handler(req, res) {
+    // CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+    
+    try {
+        const { imagen } = req.body;
+        
+        if (!imagen) {
+            return res.status(400).json({ error: 'No image provided' });
+        }
+        
+        // Extract base64 from data URL
+        const base64Image = imagen.includes('base64,') 
+            ? imagen.split('base64,')[1] 
+            : imagen;
+        
+        console.log('1. Extrayendo texto de imagen...');
+        const { ingredientes: nombresIngredientes, confianza } = await extraerTextoDeImagen(base64Image);
+        
+        console.log(`2. Ingredientes extraídos: ${nombresIngredientes.length}, Confianza: ${confianza}`);
+        
+        // Fetch database from Google Sheets
+        console.log('3. Cargando base de datos desde Google Sheets...');
+        const baseDatos = await obtenerBaseDatos();
+        console.log(`4. Base de datos cargada: ${baseDatos.length} ingredientes`);
+        
+        // Classify ingredients
+        console.log('5. Clasificando ingredientes...');
+        const { clasificados, noEncontrados } = clasificarIngredientes(nombresIngredientes, baseDatos);
+        
+        // Determine semaforo
+        const semaforo = determinarSemaforo(clasificados);
+        
+        // Log statistics
+        console.log(`6. Análisis completado:`);
+        console.log(`   - Clasificados: ${clasificados.length}`);
+        console.log(`   - No encontrados: ${noEncontrados.length}`);
+        console.log(`   - Semáforo: ${semaforo.categoria}`);
+        
+        // Return response
+        return res.status(200).json({
+            success: true,
+            ingredientes: clasificados,
+            noEncontrados,
+            semaforo,
+            confianza,
+            timestamp: new Date().toISOString(),
+            bdVersion: baseDatos.length
+        });
+        
+    } catch (error) {
+        console.error('Analysis error:', error);
+        return res.status(500).json({ 
+            error: 'Error during analysis',
+            details: error.message 
+        });
+    }
 }
