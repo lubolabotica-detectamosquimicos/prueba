@@ -1,47 +1,298 @@
-// ============================================================
-// LuBo La Botica — API: /api/stats
-// Lee estadísticas de uso por usuario
-// ============================================================
+#!/usr/bin/env node
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Método no permitido' });
+/**
+ * START.JS - Inicializador de APIs LuBo La Botica
+ * 
+ * Ejecutar con: node api/start.js
+ * 
+ * Sirve las APIs localmente en desarrollo
+ * Útil para testing antes de deploy en Vercel
+ */
 
-  const adminKey = req.query.key || '';
-  if (adminKey !== (process.env.ADMIN_KEY || 'lubo2024admin')) {
-    return res.status(401).json({ error: 'No autorizado' });
-  }
+const http = require('http');
+const url = require('url');
+const fs = require('fs');
+const path = require('path');
 
-  try {
-    const fs = await import('fs/promises');
-    const statsFile = '/tmp/lubo_stats.json';
-    let stats = {};
-    try {
-      const raw = await fs.readFile(statsFile, 'utf8');
-      stats = JSON.parse(raw);
-    } catch { stats = {}; }
+// Puerto para desarrollo local
+const PORT = process.env.PORT || 3000;
 
-    const usuarios = Object.entries(stats).map(([id, data]) => ({
-      userId: id,
-      nombre: data.nombre,
-      usos: data.usos,
-      total_ingredientes_vistos: data.ingredientes_detectados?.length || 0,
-      quimicos_encontrados: data.quimicos_encontrados?.length || 0,
-      lista_quimicos: data.quimicos_encontrados || [],
-      primera_vez: data.primera_vez,
-      ultima_vez: data.ultima_vez
-    }));
+// Simular variables de entorno si no existen
+process.env.GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || 'test-key-change-in-vercel';
+process.env.ADMIN_KEY = process.env.ADMIN_KEY || 'lubo2024admin';
 
-    return res.status(200).json({
-      total_usuarios: usuarios.length,
-      total_escaneos: usuarios.reduce((a, u) => a + u.usos, 0),
-      usuarios: usuarios.sort((a, b) => b.usos - a.usos)
-    });
+// URL de Google Sheets
+const GOOGLE_SHEETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1QLmkn8hfq_vkBv3IcaJNRI_ly6f5HorZ/export?format=csv&gid=2117305422';
 
-  } catch (error) {
-    return res.status(500).json({ error: 'Error leyendo stats', detalle: error.message });
-  }
+// Gemini API endpoint
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
+console.log('🚀 LuBo La Botica - API Server');
+console.log('================================');
+console.log(`📍 Escuchando en: http://localhost:${PORT}`);
+console.log('');
+console.log('Endpoints disponibles:');
+console.log('  POST /api/analizar  - Analizar imagen');
+console.log('  GET  /api/stats     - Obtener estadísticas');
+console.log('  POST /api/stats     - Registrar evento');
+console.log('');
+console.log('⚠️  IMPORTANTE:');
+console.log('  - Configura GOOGLE_API_KEY en variables de entorno');
+console.log('  - Esta es solo para desarrollo local');
+console.log('  - Para producción usa Vercel');
+console.log('');
+
+/**
+ * Parsear CSV de Google Sheets
+ */
+function parsearCSV(csv) {
+    const lines = csv.trim().split('\n');
+    const ingredientes = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+        const parts = lines[i].split(',').map(p => p.trim());
+        
+        if (parts.length >= 4) {
+            const categoria = parts[0].toUpperCase();
+            const nombre = parts[1];
+            const motivo = parts[2];
+            const nocividad = parseInt(parts[3]) || 0;
+            
+            if (['ROJO', 'AMARILLO', 'VERDE'].includes(categoria) && nombre) {
+                ingredientes.push({ categoria, nombre, motivo, nocividad });
+            }
+        }
+    }
+    
+    return ingredientes;
 }
+
+/**
+ * POST /api/analizar
+ */
+async function handleAnalizar(req, res, body) {
+    try {
+        const data = JSON.parse(body);
+        const { imagen } = data;
+        
+        if (!imagen) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'No image provided' }));
+            return;
+        }
+        
+        console.log('📸 Analizando imagen...');
+        
+        // Extraer base64
+        const base64Image = imagen.includes('base64,') 
+            ? imagen.split('base64,')[1] 
+            : imagen;
+        
+        // Llamar Gemini
+        console.log('🤖 Llamando Google Gemini...');
+        
+        const prompt = `Extrae SOLO la lista de ingredientes. Retorna JSON:
+{"ingredientes": ["ing1", "ing2"], "confianza": 0.9}`;
+        
+        const geminRes = await fetch(GEMINI_API_URL + '?key=' + process.env.GOOGLE_API_KEY, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
+                        { text: prompt }
+                    ]
+                }]
+            })
+        });
+        
+        if (!geminRes.ok) {
+            console.error('❌ Error Gemini:', geminRes.status);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Gemini API error' }));
+            return;
+        }
+        
+        const geminData = await geminRes.json();
+        const text = geminData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        const { ingredientes: nombres = [], confianza = 0 } = jsonMatch 
+            ? JSON.parse(jsonMatch[0]) 
+            : {};
+        
+        console.log(`✅ Gemini encontró ${nombres.length} ingredientes`);
+        
+        // Obtener BD de Google Sheets
+        console.log('📊 Descargando Google Sheets...');
+        
+        const sheetsRes = await fetch(GOOGLE_SHEETS_CSV_URL);
+        const csv = await sheetsRes.text();
+        const bd = parsearCSV(csv);
+        
+        console.log(`✅ BD cargada: ${bd.length} ingredientes`);
+        
+        // Clasificar
+        const clasificados = [];
+        const noEncontrados = [];
+        
+        for (const nombre of nombres) {
+            const encontrado = bd.find(i => 
+                i.nombre.toLowerCase().includes(nombre.toLowerCase()) ||
+                nombre.toLowerCase().includes(i.nombre.toLowerCase())
+            );
+            
+            if (encontrado) {
+                clasificados.push(encontrado);
+            } else {
+                noEncontrados.push(nombre);
+            }
+        }
+        
+        // Determinar semáforo
+        const tieneRojo = clasificados.some(i => i.categoria === 'ROJO' || i.nocividad > 30);
+        const tieneAmarillo = clasificados.some(i => i.categoria === 'AMARILLO');
+        
+        let semaforo = 'VERDE';
+        if (tieneRojo) semaforo = 'ROJO';
+        else if (tieneAmarillo) semaforo = 'AMARILLO';
+        
+        console.log(`🚦 Semáforo: ${semaforo}`);
+        
+        res.writeHead(200, { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+        });
+        
+        res.end(JSON.stringify({
+            success: true,
+            ingredientes: clasificados,
+            noEncontrados,
+            semaforo: { categoria: semaforo },
+            confianza,
+            timestamp: new Date().toISOString(),
+            bdVersion: bd.length
+        }));
+        
+    } catch (error) {
+        console.error('❌ Error:', error.message);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: error.message }));
+    }
+}
+
+/**
+ * GET /api/stats
+ */
+function handleStatsGet(req, res, query) {
+    const adminKey = query.key || '';
+    const expectedKey = process.env.ADMIN_KEY || 'lubo2024admin';
+    
+    if (adminKey !== expectedKey) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'No autorizado' }));
+        return;
+    }
+    
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+        success: true,
+        mensaje: 'Estadísticas (modo desarrollo local)',
+        timestamp: new Date().toISOString()
+    }));
+}
+
+/**
+ * POST /api/stats
+ */
+function handleStatsPost(req, res, body) {
+    try {
+        const data = JSON.parse(body);
+        const { tipo } = data;
+        
+        if (!tipo) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Tipo de evento requerido' }));
+            return;
+        }
+        
+        console.log(`📝 Evento registrado: ${tipo}`);
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            success: true,
+            id: `${Date.now()}_dev`,
+            mensaje: 'Evento registrado'
+        }));
+        
+    } catch (error) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: error.message }));
+    }
+}
+
+/**
+ * Servidor HTTP
+ */
+const server = http.createServer(async (req, res) => {
+    const parsedUrl = url.parse(req.url, true);
+    const pathname = parsedUrl.pathname;
+    const query = parsedUrl.query;
+    
+    // CORS
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    if (req.method === 'OPTIONS') {
+        res.writeHead(200);
+        res.end();
+        return;
+    }
+    
+    // Leer body
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+        if (pathname === '/api/analizar' && req.method === 'POST') {
+            handleAnalizar(req, res, body);
+        } else if (pathname === '/api/stats' && req.method === 'GET') {
+            handleStatsGet(req, res, query);
+        } else if (pathname === '/api/stats' && req.method === 'POST') {
+            handleStatsPost(req, res, body);
+        } else if (pathname === '/') {
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(`
+                <h1>🌿 LuBo La Botica - API Server</h1>
+                <p>Servidor en desarrollo local</p>
+                <p>Endpoints:</p>
+                <ul>
+                    <li>POST /api/analizar</li>
+                    <li>GET /api/stats?key=lubo2024admin</li>
+                    <li>POST /api/stats</li>
+                </ul>
+            `);
+        } else {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Not found' }));
+        }
+    });
+});
+
+server.listen(PORT, () => {
+    console.log('✅ Servidor listo para conexiones');
+    console.log(`🔗 http://localhost:${PORT}`);
+    console.log('');
+    console.log('Presiona Ctrl+C para detener');
+});
+
+server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+        console.error(`❌ Puerto ${PORT} ya está en uso`);
+        console.error('Intenta con: PORT=3001 node api/start.js');
+    } else {
+        console.error('❌ Error del servidor:', error);
+    }
+    process.exit(1);
+});
