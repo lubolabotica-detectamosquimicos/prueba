@@ -1,18 +1,18 @@
 /**
  * API: /api/analizar
  * 
- * Analyzes product ingredient labels using Google Gemini Vision
+ * Analyzes product ingredient labels using Google Gemini Vision API
  * Classifies ingredients using ONLY the external Google Sheets database
  * No internal databases - everything comes from the external source
+ * 
+ * Uses fetch directly to Gemini API (no npm dependencies required)
  */
 
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-
-// Google Sheets URL
+// Google Sheets CSV export URL
 const GOOGLE_SHEETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1QLmkn8hfq_vkBv3IcaJNRI_ly6f5HorZ/export?format=csv&gid=2117305422';
+
+// Gemini API endpoint
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 /**
  * Fetch and parse Google Sheets database
@@ -85,14 +85,11 @@ function parsearLineaCSV(line) {
 }
 
 /**
- * Extract text from image using Gemini Vision
+ * Extract text from image using Gemini Vision API (fetch)
  */
 async function extraerTextoDeImagen(base64Image) {
     try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-        
-        const prompt = `
-IMPORTANTE: Extrae SOLO la lista de ingredientes de esta etiqueta de producto.
+        const prompt = `IMPORTANTE: Extrae SOLO la lista de ingredientes de esta etiqueta de producto.
 Retorna UN ÚNICO objeto JSON válido con este formato exacto:
 {
   "ingredientes": ["nombre1", "nombre2", "nombre3"],
@@ -103,20 +100,45 @@ Notas:
 - Incluye TODOS los ingredientes visibles
 - Usa nombres en ESPAÑOL cuando sea posible
 - No agregues explicaciones, solo JSON
-- Si no puedes ver ingredientes, retorna lista vacía: {"ingredientes": [], "confianza": 0}
-`;
+- Si no puedes ver ingredientes, retorna lista vacía: {"ingredientes": [], "confianza": 0}`;
 
-        const response = await model.generateContent([
-            {
-                inlineData: {
-                    mimeType: 'image/jpeg',
-                    data: base64Image
+        const requestBody = {
+            contents: [
+                {
+                    parts: [
+                        {
+                            inlineData: {
+                                mimeType: 'image/jpeg',
+                                data: base64Image.replace(/^data:image\/\w+;base64,/, '')
+                            }
+                        },
+                        {
+                            text: prompt
+                        }
+                    ]
                 }
+            ]
+        };
+
+        const response = await fetch(GEMINI_API_URL + '?key=' + process.env.GOOGLE_API_KEY, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
             },
-            prompt
-        ]);
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Gemini API error: ${response.status}`);
+        }
+
+        const data = await response.json();
         
-        const text = response.response.text();
+        if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+            return { ingredientes: [], confianza: 0 };
+        }
+
+        const text = data.candidates[0].content.parts[0].text;
         
         // Try to parse JSON from response
         const jsonMatch = text.match(/\{[\s\S]*\}/);
