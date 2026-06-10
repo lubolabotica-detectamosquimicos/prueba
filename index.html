@@ -1,605 +1,719 @@
 <!DOCTYPE html>
 <html lang="es">
-<head><link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#53bb26">
+    <meta name="description" content="LuBo La Botica - Detector de químicos nocivos en ingredientes">
+    <title>🌿 LuBo La Botica - Detector de Ingredientes</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Estilos Variables -->
+    <link rel="stylesheet" href="css/variables.css">
+    
+    <!-- Estilos UI -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <style>
+        :root {
+            --brand-green: #53bb26;
+            --brand-red: #ef4444;
+            --brand-yellow: #fbbf24;
+            --text-primary: #1a1916;
+            --text-secondary: #5a5751;
+            --bg-light: #fefefe;
+            --bg-gray: #f5f4f0;
+            --border-color: #e5e1d8;
+            --font-body: 'Fredoka', sans-serif;
+            --font-size-sm: 0.75rem;
+            --font-size-base: 1rem;
+            --font-size-lg: 1.125rem;
+            --font-size-xl: 1.5rem;
+            --font-size-2xl: 2rem;
+            --spacing-xs: 0.5rem;
+            --spacing-sm: 1rem;
+            --spacing-md: 1.5rem;
+            --spacing-lg: 2rem;
+            --spacing-xl: 3rem;
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 1rem;
+        }
 
-<link rel="stylesheet" href="css/variables.css">
-<link rel="stylesheet" href="css/styles.css">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="description" content="LuBo La Botica — Detecta químicos nocivos en ingredientes de productos de uso cotidiano">
-<meta name="theme-color" content="#53bb26">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="LuBo La Botica">
-<title>LuBo La Botica — Detector de químicos</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-light);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* HEADER */
+        .header {
+            background: linear-gradient(135deg, var(--brand-green) 0%, #45a620 100%);
+            color: white;
+            padding: var(--spacing-lg);
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(83, 187, 38, 0.15);
+        }
+
+        .header h1 {
+            font-size: var(--font-size-2xl);
+            margin-bottom: var(--spacing-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+        }
+
+        .header p {
+            font-size: var(--font-size-sm);
+            opacity: 0.95;
+        }
+
+        /* MAIN CONTAINER */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: var(--spacing-lg);
+        }
+
+        /* TITLE SECTION */
+        .title-section {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .title-section h2 {
+            font-size: var(--font-size-xl);
+            margin-bottom: var(--spacing-md);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-primary);
+        }
+
+        /* IMAGE INPUT */
+        .image-input-section {
+            background: var(--bg-gray);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            text-align: center;
+            margin-bottom: var(--spacing-lg);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .image-input-section:hover {
+            border-color: var(--brand-green);
+            background-color: rgba(83, 187, 38, 0.05);
+        }
+
+        .image-input-section input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .upload-text {
+            font-size: var(--font-size-base);
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .upload-buttons {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: var(--font-body);
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .btn-primary {
+            background-color: var(--brand-green);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #45a620;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(83, 187, 38, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--brand-green);
+            color: var(--brand-green);
+        }
+
+        /* CANVAS SECTION */
+        #canvasContainer {
+            display: none;
+            margin-bottom: var(--spacing-lg);
+            background: var(--bg-gray);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-lg);
+        }
+
+        #canvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin-bottom: var(--spacing-md);
+            border-radius: var(--radius-md);
+        }
+
+        .canvas-controls {
+            display: flex;
+            gap: var(--spacing-sm);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* SEMÁFORO */
+        .semaforo-container {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+            display: none;
+        }
+
+        .semaforo {
+            width: 150px;
+            height: 300px;
+            margin: var(--spacing-lg) auto;
+            background: linear-gradient(135deg, #333 0%, #1a1a1a 100%);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-md);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+
+        .semaforo-light {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto;
+            background: #555;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .semaforo-light.rojo {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.8), inset 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .semaforo-light.amarillo {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            box-shadow: 0 0 30px rgba(251, 191, 36, 0.8), inset 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .semaforo-light.verde {
+            background: linear-gradient(135deg, var(--brand-green) 0%, #45a620 100%);
+            box-shadow: 0 0 30px rgba(83, 187, 38, 0.8), inset 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .semaforo-light.active {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .semaforo-label {
+            font-size: var(--font-size-base);
+            font-weight: 600;
+            margin-top: var(--spacing-lg);
+        }
+
+        .semaforo-label.rojo {
+            color: var(--brand-red);
+        }
+
+        .semaforo-label.amarillo {
+            color: var(--brand-yellow);
+        }
+
+        .semaforo-label.verde {
+            color: var(--brand-green);
+        }
+
+        .peligro-banner {
+            background: var(--brand-red);
+            color: white;
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            text-align: center;
+            font-weight: 700;
+            font-size: var(--font-size-base);
+            margin-bottom: var(--spacing-md);
+            animation: pulse 0.8s ease-in-out infinite;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* RESULTADOS */
+        .resultados-container {
+            display: none;
+        }
+
+        .resultado-item {
+            background: white;
+            border-left: 4px solid;
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            border-radius: var(--radius-md);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .resultado-item.rojo {
+            border-left-color: var(--brand-red);
+        }
+
+        .resultado-item.amarillo {
+            border-left-color: var(--brand-yellow);
+        }
+
+        .resultado-item.verde {
+            border-left-color: var(--brand-green);
+        }
+
+        .resultado-nombre {
+            font-weight: 700;
+            font-size: var(--font-size-base);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .resultado-nocividad {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+
+        /* MODAL ZOOM */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        .modal-content img {
+            width: 100%;
+            height: auto;
+            border-radius: var(--radius-lg);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* FOOTER */
+        .footer {
+            text-align: center;
+            padding: var(--spacing-lg);
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            border-top: 1px solid var(--border-color);
+            margin-top: var(--spacing-xl);
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .container {
+                padding: var(--spacing-md);
+            }
+
+            .header h1 {
+                font-size: var(--font-size-xl);
+            }
+
+            .semaforo {
+                width: 120px;
+                height: 240px;
+            }
+
+            .semaforo-light {
+                width: 100px;
+                height: 100px;
+            }
+        }
+
+        /* POPUP BIENVENIDA */
+        .popup-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: var(--spacing-md);
+        }
+
+        .popup-container.active {
+            display: flex;
+        }
+
+        .popup-content {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .popup-close {
+            float: right;
+            background: none;
+            border: none;
+            font-size: var(--font-size-xl);
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .popup-title {
+            font-size: var(--font-size-lg);
+            margin-bottom: var(--spacing-md);
+            color: var(--brand-green);
+        }
+
+        .popup-form input {
+            width: 100%;
+            padding: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-family: var(--font-body);
+        }
+    </style>
 </head>
 <body>
+    <!-- HEADER -->
+    <header class="header">
+        <h1>
+            <span style="font-size: 1.8em;">🌿</span>
+            LuBo La Botica
+        </h1>
+        <p>Detector de químicos nocivos en ingredientes</p>
+    </header>
 
-<!-- SELECTOR DE RECORTE -->
-<div id="crop-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:998;flex-direction:column;align-items:center;justify-content:flex-start;padding:0;overflow:hidden">
-  <div style="width:100%;background:rgba(0,0,0,0.7);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-    <div>
-      <div style="color:white;font-size:13px;font-weight:600">Selecciona la zona de ingredientes</div>
-      <div style="color:rgba(255,255,255,0.5);font-size:11px;margin-top:2px">Arrastra para recortar · Solo esa zona será analizada</div>
+    <!-- MAIN CONTENT -->
+    <div class="container">
+        <!-- SECCIÓN TÍTULO -->
+        <section class="title-section">
+            <h2>Analizar Etiqueta de Ingredientes</h2>
+        </section>
+
+        <!-- SECCIÓN CARGA DE IMAGEN -->
+        <section class="image-input-section" id="imageInputSection">
+            <div class="upload-icon">📸</div>
+            <p class="upload-text">o sube una foto</p>
+            <input type="file" id="fileInput" accept="image/*">
+            <div class="upload-buttons">
+                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                    📷 Galería / Subir foto
+                </button>
+                <button class="btn btn-secondary" onclick="abrirCamara()">
+                    📹 Cámara
+                </button>
+            </div>
+        </section>
+
+        <!-- CANVAS PARA CROP -->
+        <div id="canvasContainer">
+            <canvas id="canvas"></canvas>
+            <div class="canvas-controls">
+                <button class="btn btn-primary" onclick="confirmarCrop()">✓ Confirmar selección</button>
+                <button class="btn btn-secondary" onclick="resetCrop()">↻ Limpiar</button>
+            </div>
+        </div>
+
+        <!-- SEMÁFORO -->
+        <div class="semaforo-container" id="semaforoContainer">
+            <div class="semaforo" id="semaforo">
+                <div class="semaforo-light" id="light1"></div>
+                <div class="semaforo-light" id="light2"></div>
+                <div class="semaforo-light" id="light3"></div>
+            </div>
+            <div class="semaforo-label" id="semaforoLabel"></div>
+        </div>
+
+        <!-- BANNER PELIGRO -->
+        <div class="peligro-banner" id="peligroBanner" style="display:none;">
+            🚫 NO CONSUMIR - Contiene químicos nocivos (>30%)
+        </div>
+
+        <!-- RESULTADOS -->
+        <div class="resultados-container" id="resultadosContainer">
+            <h3 style="margin-bottom: var(--spacing-md); font-size: var(--font-size-lg);">Ingredientes detectados:</h3>
+            <div id="resultadosList"></div>
+        </div>
     </div>
-    <button onclick="cerrarCrop()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
-  </div>
-  <div style="flex:1;width:100%;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center" id="crop-container">
-    <canvas id="crop-canvas" style="max-width:100%;max-height:100%;cursor:crosshair;touch-action:none"></canvas>
-  </div>
-  <div style="width:100%;padding:12px 16px;background:rgba(0,0,0,0.7);display:flex;gap:10px;flex-shrink:0">
-    <button onclick="resetCrop()" style="flex:1;padding:11px;background:rgba(255,255,255,0.12);color:white;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">
-      ↺ Limpiar selección
-    </button>
-    <button onclick="confirmarCrop()" id="crop-confirm-btn" style="flex:2;padding:11px;background:#53bb26;color:white;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">
-      ✅ Analizar zona seleccionada
-    </button>
-  </div>
-</div>
 
-<!-- POPUP REGISTRO -->
-<div id="popup-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:999;align-items:center;justify-content:center;padding:16px">
-  <div style="background:white;border-radius:18px;padding:24px 20px;max-width:380px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.18)">
-    <div style="text-align:center;margin-bottom:18px">
-      <div style="font-size:32px;margin-bottom:8px">🌿</div>
-      <div style="font-family:'DM Serif Display',Georgia,serif;font-size:20px;color:#1a1916;margin-bottom:6px">Bienvenido a LuBo La Botica</div>
-      <div style="font-size:13px;color:#5a5751;line-height:1.5">Detecta químicos nocivos en productos del hogar, alimentos y cosméticos</div>
+    <!-- FOOTER -->
+    <footer class="footer">
+        <p>🌿 LuBo La Botica | Detector de químicos • <a href="https://lubo-labotica.com" style="color: var(--brand-green); text-decoration: none;">lubo-labotica.com</a></p>
+    </footer>
+
+    <!-- POPUP BIENVENIDA -->
+    <div class="popup-container" id="popupContainer">
+        <div class="popup-content">
+            <button class="popup-close" onclick="cerrarPopup()">✕</button>
+            <h2 class="popup-title">🌿 Bienvenido a LuBo La Botica</h2>
+            <p style="margin-bottom: var(--spacing-md); color: var(--text-secondary);">
+                Detecta químicos nocivos en tus productos favoritos. Escanea la etiqueta de ingredientes y conoce qué hay realmente en lo que compras.
+            </p>
+            <form class="popup-form" onsubmit="guardarUsuario(event)">
+                <input type="text" id="userName" placeholder="Tu nombre" required>
+                <input type="email" id="userEmail" placeholder="Tu email" required>
+                <button class="btn btn-primary" style="width: 100%; justify-content: center;">Comenzar</button>
+            </form>
+        </div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
-      <input id="popup-nombre" type="text" placeholder="Tu nombre" style="padding:10px 12px;font-size:14px;border:1px solid rgba(0,0,0,0.13);border-radius:10px;font-family:'DM Sans',sans-serif;outline:none" onfocus="this.style.borderColor='#53bb26'" onblur="this.style.borderColor='rgba(0,0,0,0.13)'">
-      <input id="popup-email" type="email" placeholder="Tu email" style="padding:10px 12px;font-size:14px;border:1px solid rgba(0,0,0,0.13);border-radius:10px;font-family:'DM Sans',sans-serif;outline:none" onfocus="this.style.borderColor='#53bb26'" onblur="this.style.borderColor='rgba(0,0,0,0.13)'">
-      <select id="popup-uso" style="padding:10px 12px;font-size:14px;border:1px solid rgba(0,0,0,0.13);border-radius:10px;font-family:'DM Sans',sans-serif;outline:none;color:#5a5751;background:white">
-        <option value="">¿Para qué usarás la app?</option>
-        <option value="personal">Uso personal / familia</option>
-        <option value="negocio">Tengo un negocio</option>
-        <option value="salud">Temas de salud</option>
-        <option value="otro">Otro</option>
-      </select>
-    </div>
-    <label style="display:flex;align-items:flex-start;gap:8px;font-size:11px;color:#5a5751;margin-bottom:14px;cursor:pointer">
-      <input type="checkbox" id="popup-acepto" style="margin-top:2px;accent-color:#53bb26">
-      Acepto recibir novedades y alertas de LuBo La Botica
-    </label>
-    <button onclick="enviarPopup()" id="popup-btn" style="width:100%;padding:12px;background:#53bb26;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:8px">Empezar gratis →</button>
-    <button onclick="saltarPopup()" style="width:100%;padding:8px;background:none;border:none;font-size:12px;color:#9e9b94;cursor:pointer;font-family:'DM Sans',sans-serif">Saltar por ahora</button>
-  </div>
-</div>
 
-<div class="install-banner" id="ib">
-  📲 Instala LuBo La Botica en tu pantalla de inicio
-  <button id="btn-install">Instalar</button>
-  <button class="ci" id="close-install">✕</button>
-</div>
+    <!-- SCRIPTS -->
+    <script src="js/scanner.js"></script>
+    <script src="data/db-naturales.js"></script>
+    <script src="js/utils.js"></script>
 
-<!-- HEADER -->
-<header class="site-header">
-  <a href="https://www.lubo-labotica.com" class="logo">
-    <img src="assets/logos/leaf.png" alt="LuBo Logo" style="width:40px;height:40px;object-fit:contain">
-    <div class="logo-text">
-      <div class="logo-lubo">LuBo <span>La Botica</span></div>
-      <div class="logo-sub">Detector de químicos</div>
-    </div>
-  </a>
-  <a href="https://www.lubo-labotica.com" class="header-link">
-    <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-    lubo-labotica.com
-  </a>
-</header>
+    <script>
+        // Estado global
+        let imagenActual = null;
+        let usuarioRegistrado = false;
 
-<!-- SEMAFORO SUPERIOR -->
-<div class="semaforo-bar">
-  <div class="semaforo-3d">
-    <div class="sem-item" id="sem-rojo">
-      <div class="sem-ball red" id="ball-rojo"></div>
-      <div class="sem-label">Peligroso</div>
-      <div class="sem-sub">&gt;30% · 1 nocivo</div>
-    </div>
-    <div class="sem-sep"></div>
-    <div class="sem-item" id="sem-amber">
-      <div class="sem-ball amber" id="ball-amber"></div>
-      <div class="sem-label">Precaución</div>
-      <div class="sem-sub">1–30%</div>
-    </div>
-    <div class="sem-sep"></div>
-    <div class="sem-item" id="sem-verde">
-      <div class="sem-ball green" id="ball-verde"></div>
-      <div class="sem-label">Limpio</div>
-      <div class="sem-sub">0% nocivos</div>
-    </div>
-  </div>
-</div>
+        // Inicializar popup
+        window.addEventListener('load', () => {
+            const visto = localStorage.getItem('visto');
+            if (!visto) {
+                document.getElementById('popupContainer').classList.add('active');
+            }
+        });
 
-<!-- ESCANER -->
-<div class="scanner-wrap">
-  <div style="text-align:center;margin-bottom:12px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)">Analizar etiqueta de ingredientes</div>
-  <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
-    <button id="btn-cam" onclick="toggleCam()" style="width:100%;max-width:380px;padding:16px 24px;background:var(--brand-green);color:white;border:none;border-radius:var(--r-lg);font-size:15px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(83,187,38,.35);transition:all .15s">
-      <svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:white;fill:none;stroke-width:2;flex-shrink:0"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-      Escanear ingredientes
-    </button>
-    <div style="display:flex;align-items:center;gap:10px;width:100%;max-width:380px">
-      <div style="flex:1;height:1px;background:var(--border-med)"></div>
-      <span style="font-size:11px;color:var(--text-3)">o sube una foto</span>
-      <div style="flex:1;height:1px;background:var(--border-med)"></div>
-    </div>
-    <button onclick="document.getElementById('fi2').click()" style="width:100%;max-width:380px;padding:10px 24px;background:var(--surface);color:var(--text-2);border:1px solid var(--border-med);border-radius:var(--r-md);font-size:13px;font-weight:500;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
-      <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>
-      Galería / Subir foto
-    </button>
-    <input type="file" id="fi2" accept="image/*" style="display:none" onchange="loadImgMain(event)">
-  </div>
-  <div id="vid-wrap2" style="display:none;margin-top:12px;border-radius:var(--r-md);overflow:hidden;position:relative;background:#000">
-    <video id="vid2" autoplay playsinline muted style="width:100%;display:block;max-height:280px;object-fit:cover"></video>
-    <button onclick="capturarMain()" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);width:56px;height:56px;border-radius:50%;background:white;border:3px solid rgba(255,255,255,.6);cursor:pointer;font-size:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3)">📷</button>
-    <div style="position:absolute;top:10px;left:0;right:0;text-align:center;font-size:11px;color:rgba(255,255,255,.7)">Encuadra los ingredientes y toca 📷</div>
-  </div>
-  <div id="prev-wrap2" style="display:none;margin-top:12px">
-    <div style="position:relative;cursor:crosshair" onclick="abrirCrop()">
-      <img id="prev-img2" alt="Etiqueta" style="width:100%;max-height:240px;object-fit:contain;display:block;background:var(--gray-100);border-radius:var(--r-md);pointer-events:none">
-      <div id="crop-hint-badge" style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.65);color:white;font-size:11px;padding:5px 12px;border-radius:20px;white-space:nowrap;pointer-events:none">✂️ Toca para seleccionar zona de ingredientes</div>
-    </div>
-    <div id="crop-preview-info" style="display:none;margin-top:6px;background:var(--green-light);border:1px solid var(--green-border);border-radius:8px;padding:7px 11px;font-size:11px;color:var(--green-dark);align-items:center;gap:6px">
-      <span>✅</span><span id="crop-preview-txt">Zona seleccionada — solo esa área será analizada</span>
-      <button onclick="limpiarCropPreview()" style="margin-left:auto;background:none;border:none;color:var(--text-3);cursor:pointer;font-size:12px;font-family:var(--font-body)">✕ Quitar recorte</button>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="cam-btn primary" style="flex:2" id="btn-ai2" onclick="analizarImgMain()">
-        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:white;fill:none;stroke-width:2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Analizar con IA
-      </button>
-      <button class="cam-btn" style="flex:1" onclick="resetCamMain()">
-        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.03-5.39"/></svg>Nueva
-      </button>
-    </div>
-  </div>
-  <div id="cb-main" style="margin-top:10px"></div>
-  <canvas id="cnv2" style="display:none"></canvas>
-</div>
+        function guardarUsuario(e) {
+            e.preventDefault();
+            const nombre = document.getElementById('userName').value;
+            const email = document.getElementById('userEmail').value;
+            
+            localStorage.setItem('visto', 'listo');
+            localStorage.setItem('userName', nombre);
+            localStorage.setItem('userEmail', email);
+            usuarioRegistrado = true;
+            
+            cerrarPopup();
+            registrarEstadistica('usuario_registrado', {nombre, email});
+        }
 
-<!-- NAV TABS -->
-<nav class="nav-tabs">
-  <button class="nav-tab active" onclick="go('buscar')" id="tab-buscar">
-    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Buscar ingrediente
-  </button>
-  <button class="nav-tab" onclick="go('misestats')" id="tab-misestats">
-    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Mis análisis
-  </button>
-</nav>
+        function cerrarPopup() {
+            document.getElementById('popupContainer').classList.remove('active');
+        }
 
-<main class="main">
-  <div id="sec-buscar" class="section active">
-    <div id="list-view">
-      <div class="search-wrap">
-        <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input class="search-input" type="text" placeholder="Buscar ingrediente..." id="si" oninput="filtrar()">
-      </div>
-      <div class="chips">
-        <button class="chip" onclick="sf('rojo',this)">🔴 Peligroso</button>
-        <button class="chip" onclick="sf('amarillo',this)">🟡 Precaución</button>
-        <button class="chip" onclick="sf('verde',this)">🟢 Limpio</button>
-      </div>
-      <div class="result-list" id="rl"></div>
-    </div>
-    <div id="dv" class="detail-view">
-      <button class="detail-back" onclick="cerrar()">
-        <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>Volver
-      </button>
-      <div id="dc"></div>
-    </div>
-  </div>
-  <div id="sec-misestats" class="section">
-    <div style="margin-bottom:16px">
-      <div style="font-family:var(--font-disp);font-size:20px;color:var(--text);margin-bottom:4px">Mis análisis</div>
-      <div style="font-size:12px;color:var(--text-3)">Historial guardado en este dispositivo</div>
-    </div>
-    <div id="stats-resumen"></div>
-    <div id="stats-lista"></div>
-  </div>
-</main>
+        // INPUT FILE
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    imagenActual = event.target.result;
+                    mostrarCanvasParaCrop(imagenActual);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
 
-<footer class="site-footer">
-  <p>🌿 LuBo La Botica &middot; <a href="https://www.lubo-labotica.com">lubo-labotica.com</a></p>
-  <p style="margin-top:4px">633 ingredientes naturales · 43 químicos nocivos evaluados</p>
-</footer>
+        function abrirCamara() {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(stream => {
+                    const video = document.createElement('video');
+                    video.srcObject = stream;
+                    video.play();
+                    
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    
+                    setTimeout(() => {
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(video, 0, 0);
+                        imagenActual = canvas.toDataURL('image/jpeg');
+                        mostrarCanvasParaCrop(imagenActual);
+                        stream.getTracks().forEach(track => track.stop());
+                    }, 1000);
+                })
+                .catch(err => alert('Error al acceder a la cámara: ' + err.message));
+        }
 
-<script>
-const DB_RAW=[
-  {nombre:"Bromato de potasio",uso:"Alimentos",riesgo:"Cancerígeno, prohibido en la UE",nocividad:90,productos:"Pan industrial, harinas"},
-  {nombre:"Nitratos y nitritos",uso:"Alimentos",riesgo:"Precursores de nitrosaminas cancerígenas",nocividad:90,productos:"Embutidos, tocino, jamón"},
-  {nombre:"Aceites parcialmente hidrogenados",uso:"Alimentos",riesgo:"Grasas trans, cardiotóxicas",nocividad:90,productos:"Galletas, pasteles industriales"},
-  {nombre:"BHA / BHT",uso:"Alimentos",riesgo:"Posible carcinógeno y disruptor endocrino",nocividad:85,productos:"Snacks, cereales, galletas"},
-  {nombre:"Bisfenol A (BPA)",uso:"Alimentos",riesgo:"Disruptor endocrino",nocividad:85,productos:"Latas de alimentos, botellas plásticas"},
-  {nombre:"Aluminio (sales)",uso:"Alimentos",riesgo:"Acumulación neurotóxica",nocividad:80,productos:"Quesos fundidos, polvo de hornear"},
-  {nombre:"Tartrazina",uso:"Alimentos",riesgo:"Hiperactividad infantil, alergias",nocividad:75,productos:"Golosinas, refrescos, cereales"},
-  {nombre:"Colorantes artificiales (Rojo 40, Azul 1, Amarillo 5)",uso:"Alimentos",riesgo:"Asociados a hiperactividad y alergias",nocividad:75,productos:"Bebidas, dulces, cereales"},
-  {nombre:"Perclorato",uso:"Alimentos",riesgo:"Afecta tiroides y desarrollo fetal",nocividad:75,productos:"Agua potable contaminada"},
-  {nombre:"Glutamato monosódico (MSG)",uso:"Alimentos",riesgo:"Excitotoxina, posibles efectos neurológicos",nocividad:70,productos:"Sopas instantáneas, snacks"},
-  {nombre:"Eritrosina (Rojo N°3)",uso:"Alimentos",riesgo:"Hipertiroidismo, posible cancerígeno",nocividad:70,productos:"Caramelos, cerezas en conserva"},
-  {nombre:"Jarabe de maíz de alta fructosa",uso:"Alimentos",riesgo:"Inflamación, hígado graso",nocividad:70,productos:"Refrescos, cereales, aderezos"},
-  {nombre:"Propionato de calcio/sodio",uso:"Alimentos",riesgo:"Alteraciones metabólicas",nocividad:60,productos:"Pan de molde, pasteles"},
-  {nombre:"Carragenina",uso:"Alimentos",riesgo:"Inflamación intestinal",nocividad:60,productos:"Leches vegetales, postres veganos"},
-  {nombre:"Benzoato de sodio",uso:"Ambos",riesgo:"Forma benceno cancerígeno con vitamina C",nocividad:60,productos:"Bebidas, jugos, aderezos"},
-  {nombre:"Propylene glycol",uso:"Ambos",riesgo:"Tóxico renal a dosis altas",nocividad:60,productos:"Hidratantes, productos capilares"},
-  {nombre:"Compuestos perfluorados (PFOA/PFOS)",uso:"Ambos",riesgo:"Bioacumulables, afectan tiroides",nocividad:85,productos:"Sartenes antiadherentes, maquillaje"},
-  {nombre:"Diacetil",uso:"Alimentos",riesgo:"Bronquiolitis obliterante",nocividad:85,productos:"Saborizantes, microondas, vapers"},
-  {nombre:"Plomo",uso:"Cosmética",riesgo:"Neurotóxico grave",nocividad:95,productos:"Maquillaje, tintes, labiales"},
-  {nombre:"Mercurio",uso:"Cosmética",riesgo:"Neurotóxico, daño renal",nocividad:95,productos:"Cremas aclarantes, cosméticos"},
-  {nombre:"Formaldehido",uso:"Cosmética",riesgo:"Cancerígeno grupo 1 IARC",nocividad:90,productos:"Esmaltes, alisadores, textiles"},
-  {nombre:"Ftalatos",uso:"Cosmética",riesgo:"Disruptores endocrinos, fertilidad",nocividad:85,productos:"Perfumes, esmaltes, plásticos"},
-  {nombre:"Alquitrán de hulla",uso:"Cosmética",riesgo:"Cancerígeno probable",nocividad:85,productos:"Champús anticaspa, tintes"},
-  {nombre:"Tolueno",uso:"Cosmética",riesgo:"Neurotóxico, afecta feto",nocividad:85,productos:"Removedores de esmalte, tintes"},
-  {nombre:"1,4-Dioxano",uso:"Cosmética",riesgo:"Cancerígeno probable",nocividad:85,productos:"Champús, jabones líquidos"},
-  {nombre:"Triclosán",uso:"Cosmética",riesgo:"Disruptor endocrino",nocividad:80,productos:"Pastas dentales, jabones antibacteriales"},
-  {nombre:"Aluminio (clorhidrato)",uso:"Cosmética",riesgo:"Posible neurotóxico",nocividad:80,productos:"Antitranspirantes"},
-  {nombre:"DEA / TEA / MEA",uso:"Cosmética",riesgo:"Disruptores hormonales, carcinógenos potenciales",nocividad:80,productos:"Champús, jabones, cremas"},
-  {nombre:"Resorcinol",uso:"Cosmética",riesgo:"Disruptor tiroideo",nocividad:75,productos:"Tintes para cabello"},
-  {nombre:"Parfum / Fragrance",uso:"Cosmética",riesgo:"Alergias, disruptores endocrinos ocultos",nocividad:75,productos:"Perfumes, desodorantes, cremas"},
-  {nombre:"Oxibenzona / Avobenzona",uso:"Cosmética",riesgo:"Disruptores hormonales",nocividad:75,productos:"Protectores solares"},
-  {nombre:"Parabenos (metil, propil, butil, etil)",uso:"Cosmética",riesgo:"Disruptores estrogénicos",nocividad:70,productos:"Cremas, lociones, shampoos"},
-  {nombre:"Microplásticos (polietileno, nylon)",uso:"Cosmética",riesgo:"Contaminación ambiental y dérmica",nocividad:70,productos:"Exfoliantes, pastas dentales"},
-  {nombre:"Sodium Lauryl Sulfate (SLS)",uso:"Cosmética",riesgo:"Irritante de piel y mucosas",nocividad:65,productos:"Jabones, pastas dentales, champús"},
-  {nombre:"Sodium Laureth Sulfate (SLES)",uso:"Cosmética",riesgo:"Contaminado con dioxano",nocividad:60,productos:"Shampoo, jabones líquidos"},
-  {nombre:"Siliconas PEG/PPG",uso:"Cosmética",riesgo:"Bioacumulables, ocluyen poros",nocividad:60,productos:"Shampoo, maquillaje, cremas"},
-  {nombre:"Paraffinum / Aceite mineral",uso:"Cosmética",riesgo:"Ocluye poros, hidratación falsa",nocividad:55,productos:"Bálsamos, cremas hidratantes"},
-  {nombre:"Peróxido de benzoilo",uso:"Ambos",riesgo:"Irritante dérmico",nocividad:65,productos:"Tratamientos acné, harinas"},
-  {nombre:"Azúcar refinada en exceso",uso:"Alimentos",riesgo:"Inflamación, resistencia insulina",nocividad:50,productos:"Bebidas azucaradas, dulces"},
-  {nombre:"Siliconas (dimethicone)",uso:"Cosmética",riesgo:"Bioacumulables",nocividad:50,productos:"Maquillaje, bases, sueros"},
-  {nombre:"Ammonium lauryl/laureth sulfate",uso:"Cosmética",riesgo:"Irritante, dioxano secundario",nocividad:55,productos:"Champús, limpiadores"}
-];
-function sem(n){if(n===null)return'amarillo';if(n>30)return'rojo';if(n>=1)return'amarillo';return'verde';}
-const DB=DB_RAW.map(q=>({...q,semaforo:sem(q.nocividad)}));
-const CM={rojo:'#e24b4a',amarillo:'#ef9f27',verde:'#639922'};
-let FA='todos',FA_chip=false;
+        // SEMÁFORO
+        function mostrarSemaforo(categoria) {
+            const container = document.getElementById('semaforoContainer');
+            const light1 = document.getElementById('light1');
+            const light2 = document.getElementById('light2');
+            const light3 = document.getElementById('light3');
+            const label = document.getElementById('semaforoLabel');
+            
+            // Reset
+            [light1, light2, light3].forEach(l => {
+                l.classList.remove('rojo', 'amarillo', 'verde', 'active');
+            });
+            
+            if (categoria === 'ROJO') {
+                light1.classList.add('rojo', 'active');
+                label.className = 'semaforo-label rojo';
+                label.textContent = '🔴 PELIGROSO';
+                document.getElementById('peligroBanner').style.display = 'block';
+            } else if (categoria === 'AMARILLO') {
+                light2.classList.add('amarillo', 'active');
+                label.className = 'semaforo-label amarillo';
+                label.textContent = '🟡 PRECAUCIÓN';
+                document.getElementById('peligroBanner').style.display = 'none';
+            } else if (categoria === 'VERDE') {
+                light3.classList.add('verde', 'active');
+                label.className = 'semaforo-label verde';
+                label.textContent = '🟢 SEGURO';
+                document.getElementById('peligroBanner').style.display = 'none';
+            }
+            
+            container.style.display = 'block';
+        }
 
-// SEMAFORO: iluminar bola
-function activarSemaforo(clsf){
-  ['ball-rojo','ball-amber','ball-verde'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('active');});
-  ['sem-rojo','sem-amber','sem-verde'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('active');});
-  const m={rojo:['ball-rojo','sem-rojo'],amarillo:['ball-amber','sem-amber'],verde:['ball-verde','sem-verde']};
-  if(clsf&&m[clsf])m[clsf].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.add('active');});
-}
+        // ANALIZAR IMAGEN
+        async function analizarImagen() {
+            if (!imagenActual) {
+                alert('Por favor carga una imagen primero');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/analizar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imagen: imagenActual })
+                });
+                
+                const resultado = await response.json();
+                mostrarResultados(resultado.ingredientes);
+            } catch (error) {
+                console.error('Error al analizar:', error);
+                alert('Error al analizar la imagen. Intenta de nuevo.');
+            }
+        }
 
-// STATS LOCALES
-function getStatsLocal(){try{return JSON.parse(localStorage.getItem('lubo_stats')||'{"usos":0,"analisis":[]}');}catch{return{usos:0,analisis:[]};}}
-function saveStatsLocal(d){localStorage.setItem('lubo_stats',JSON.stringify(d));}
-function registrarAnalisis(r){
-  const s=getStatsLocal();s.usos=(s.usos||0)+1;if(!s.analisis)s.analisis=[];
-  s.analisis.unshift({fecha:new Date().toLocaleString('es-CO'),clasificacion:r.clasificacion_sugerida||'verde',total:r.ingredientes?.length||0,quimicos:r.coincidencias||[],naturales:r.naturales?.length||0});
-  s.analisis=s.analisis.slice(0,20);saveStatsLocal(s);
-}
-function renderStats(){
-  const s=getStatsLocal();
-  const res=document.getElementById('stats-resumen');
-  const lst=document.getElementById('stats-lista');
-  if(!res||!lst)return;
-  res.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px"><div class="stats-card"><div class="stats-label">Total escaneos</div><div class="stats-val">${s.usos||0}</div></div><div class="stats-card"><div class="stats-label">Último análisis</div><div class="stats-val" style="font-size:13px;font-weight:400">${s.analisis?.[0]?.fecha||'—'}</div></div></div>`;
-  if(!s.analisis?.length){lst.innerHTML='<div class="placeholder"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><p>Aún no has hecho ningún análisis</p><small>Escanea la etiqueta de un producto para empezar</small></div>';return;}
-  const colores={rojo:'#e24b4a',amarillo:'#ef9f27',verde:'#639922'};
-  const emojis={rojo:'🚫',amarillo:'⚡',verde:'✅'};
-  lst.innerHTML='<div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px">Historial de análisis</div>'+
-    s.analisis.map(a=>`<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid ${colores[a.clasificacion]||'#9e9b94'};border-radius:var(--r-md);padding:10px 12px;margin-bottom:6px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:500">${emojis[a.clasificacion]||'•'} ${a.clasificacion==='rojo'?'NO CONSUMIR':a.clasificacion==='amarillo'?'PRECAUCIÓN':'PRODUCTO LIMPIO'}</span><span style="font-size:10px;color:var(--text-3)">${a.fecha}</span></div><div style="font-size:11px;color:var(--text-3)">${a.total} ingredientes · ${a.quimicos.length} químicos · ${a.naturales} naturales</div>${a.quimicos.length>0?`<div style="margin-top:5px;font-size:10px;color:#e24b4a">${a.quimicos.slice(0,3).join(', ')}${a.quimicos.length>3?' +más…':''}</div>`:''}</div>`).join('');
-}
+        function mostrarResultados(ingredientes) {
+            const container = document.getElementById('resultadosContainer');
+            const lista = document.getElementById('resultadosList');
+            
+            lista.innerHTML = '';
+            
+            let categoriaMaxima = 'VERDE';
+            let nocividadMaxima = 0;
+            
+            ingredientes.forEach(ing => {
+                const item = document.createElement('div');
+                item.className = `resultado-item ${ing.categoria.toLowerCase()}`;
+                item.innerHTML = `
+                    <div class="resultado-nombre">${ing.nombre}</div>
+                    <div class="resultado-nocividad">Nocividad: ${ing.nocividad}%</div>
+                `;
+                lista.appendChild(item);
+                
+                if (ing.nocividad > nocividadMaxima) {
+                    nocividadMaxima = ing.nocividad;
+                    categoriaMaxima = ing.categoria;
+                }
+            });
+            
+            mostrarSemaforo(categoriaMaxima);
+            container.style.display = 'block';
+            registrarEstadistica('analisis_completado', {total: ingredientes.length});
+        }
 
-// POPUP
-const FORMSPREE_URL='https://formspree.io/f/mnjrknka';
-function mostrarPopup(){const e=localStorage.getItem('lubo_popup');if(e==='listo')return;if(!e)localStorage.setItem('lubo_popup','visto1');setTimeout(()=>{document.getElementById('popup-overlay').style.display='flex';},2000);}
-async function enviarPopup(){
-  const nombre=document.getElementById('popup-nombre').value.trim();
-  const email=document.getElementById('popup-email').value.trim();
-  const uso=document.getElementById('popup-uso').value;
-  const acepto=document.getElementById('popup-acepto').checked;
-  if(!email){alert('Por favor ingresa tu email.');return;}
-  if(!acepto){alert('Por favor acepta recibir novedades.');return;}
-  const btn=document.getElementById('popup-btn');btn.textContent='Enviando...';btn.disabled=true;
-  try{
-    const res=await fetch(FORMSPREE_URL,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({nombre:nombre||'Sin nombre',email,fecha:new Date().toLocaleDateString('es-CO'),zona:Intl.DateTimeFormat().resolvedOptions().timeZone||'Desconocido',uso:uso||'No especificado'})});
-    if(!res.ok){btn.textContent='Empezar gratis →';btn.disabled=false;alert('Hubo un error. Intenta de nuevo.');return;}
-  }catch{btn.textContent='Empezar gratis →';btn.disabled=false;alert('Error de conexión.');return;}
-  if(nombre)localStorage.setItem('lubo_nombre',nombre);
-  localStorage.setItem('lubo_popup','listo');
-  document.getElementById('popup-overlay').style.display='none';
-}
-function saltarPopup(){if(localStorage.getItem('lubo_popup')==='visto1')localStorage.setItem('lubo_popup','listo');document.getElementById('popup-overlay').style.display='none';}
-mostrarPopup();
+        // ESTADÍSTICAS
+        function registrarEstadistica(tipo, datos = {}) {
+            const stats = JSON.parse(localStorage.getItem('stats') || '{}');
+            stats[tipo] = (stats[tipo] || 0) + 1;
+            localStorage.setItem('stats', JSON.stringify(stats));
+            
+            // Enviar a servidor opcional
+            fetch('/api/stats', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({tipo, datos, timestamp: new Date()})
+            }).catch(() => {});
+        }
 
-// NAV
-function go(t){
-  document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
-  document.getElementById('sec-'+t).classList.add('active');
-  document.getElementById('tab-'+t).classList.add('active');
-  if(t==='misestats')renderStats();
-}
-
-// BUSCADOR
-function sf(f,b){FA=f;FA_chip=true;document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));b.classList.add('active');filtrar();}
-function filtrar(){
-  const q=document.getElementById('si').value.toLowerCase();
-  if(!q&&!FA_chip){document.getElementById('rl').innerHTML='';return;}
-  renderL(DB.filter(i=>(i.nombre.toLowerCase().includes(q)||i.productos.toLowerCase().includes(q))&&(FA==='todos'||i.semaforo===FA)));
-}
-function renderL(it){
-  const l=document.getElementById('rl');
-  if(!it.length){l.innerHTML='<div class="empty"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg><p>Sin resultados</p></div>';return;}
-  l.innerHTML=it.map(q=>`<div class="q-card" onclick="det('${q.nombre.replace(/'/g,"\\'")}')"><div class="q-dot" style="background:${CM[q.semaforo]}"></div><div class="q-body"><div class="q-name">${q.nombre}<span class="badge badge-${q.semaforo[0]}">${q.semaforo==='rojo'?'⚠ Peligroso':q.semaforo==='amarillo'?'⚡ Precaución':'✓ Limpio'}</span></div><div style="font-size:11px;color:var(--text-3);margin-top:2px">${q.uso}${q.nocividad!==null?' · '+q.nocividad+'%':''}</div>${q.riesgo?`<div style="font-size:11px;color:var(--text-2);margin-top:2px">${q.riesgo}</div>`:''}</div></div>`).join('');
-}
-function det(n){
-  const q=DB.find(x=>x.nombre===n);if(!q)return;
-  document.getElementById('list-view').style.display='none';
-  document.getElementById('dv').classList.add('open');
-  const lbl=q.semaforo==='rojo'?'⚠ Peligroso — evitar':q.semaforo==='amarillo'?'⚡ Precaución — uso moderado':'✓ Limpio — bajo riesgo';
-  document.getElementById('dc').innerHTML=`<div style="font-family:var(--font-disp);font-size:20px;color:var(--text);margin-bottom:14px">${q.nombre}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:13px"><div style="background:var(--gray-50);border-radius:var(--r-sm);padding:10px 12px"><div style="font-size:10px;color:var(--text-3);text-transform:uppercase">Categoría</div><div style="font-size:14px;font-weight:500;margin-top:2px">${q.uso}</div></div><div style="background:var(--gray-50);border-radius:var(--r-sm);padding:10px 12px"><div style="font-size:10px;color:var(--text-3);text-transform:uppercase">Nocividad</div><div style="font-size:17px;font-weight:500;color:${CM[q.semaforo]};margin-top:2px">${q.nocividad!==null?q.nocividad+'%':'Sin dato'}</div></div></div>${q.nocividad!==null?`<div style="height:6px;border-radius:3px;background:var(--gray-100);margin-bottom:13px;overflow:hidden"><div style="width:${q.nocividad}%;height:100%;border-radius:3px;background:${CM[q.semaforo]}"></div></div>`:''}<div style="padding:9px 0;border-bottom:1px solid var(--border)"><div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin-bottom:3px">Clasificación</div><div style="font-size:13px">${lbl}</div></div><div style="padding:9px 0;border-bottom:1px solid var(--border)"><div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin-bottom:3px">Riesgo</div><div style="font-size:13px;line-height:1.5">${q.riesgo}</div></div><div style="padding:9px 0"><div style="font-size:10px;color:var(--text-3);text-transform:uppercase;margin-bottom:3px">Se encuentra en</div><div style="font-size:13px;line-height:1.5">${q.productos||'—'}</div></div>`;
-}
-function cerrar(){document.getElementById('list-view').style.display='';document.getElementById('dv').classList.remove('open');}
-
-// ZOOM
-// ── CROP / RECORTE DE ZONA ─────────────────────────────────
-let cropState = {
-  fullDataUrl: null,
-  croppedDataUrl: null,
-  rect: null,
-  drawing: false,
-  startX: 0, startY: 0,
-  imgNaturalW: 0, imgNaturalH: 0
-};
-
-function abrirCrop() {
-  if (!cropState.fullDataUrl) return;
-  const overlay = document.getElementById('crop-overlay');
-  overlay.style.display = 'flex';
-  const canvas = document.getElementById('crop-canvas');
-  const img = new Image();
-  img.onload = () => {
-    const maxW = window.innerWidth;
-    const maxH = window.innerHeight - 120;
-    const scale = Math.min(maxW / img.width, maxH / img.height, 1);
-    canvas.width = Math.round(img.width * scale);
-    canvas.height = Math.round(img.height * scale);
-    cropState.imgNaturalW = img.width;
-    cropState.imgNaturalH = img.height;
-    canvas._img = img;
-    canvas._scale = scale;
-    dibujarCropCanvas(cropState.rect);
-  };
-  img.src = cropState.fullDataUrl;
-}
-
-function dibujarCropCanvas(rect) {
-  const canvas = document.getElementById('crop-canvas');
-  const ctx = canvas.getContext('2d');
-  const img = canvas._img;
-  const scale = canvas._scale;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  if (rect) {
-    const sx = rect.x * scale, sy = rect.y * scale;
-    const sw = rect.w * scale, sh = rect.h * scale;
-    ctx.clearRect(sx, sy, sw, sh);
-    ctx.drawImage(img, rect.x, rect.y, rect.w, rect.h, sx, sy, sw, sh);
-    ctx.strokeStyle = '#53bb26';
-    ctx.lineWidth = 2.5;
-    ctx.strokeRect(sx, sy, sw, sh);
-    const cs = 14;
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = '#ffffff';
-    [[sx,sy,1,0],[sx,sy,0,1],[sx+sw,sy,-1,0],[sx+sw,sy,0,1],
-     [sx,sy+sh,1,0],[sx,sy+sh,0,-1],[sx+sw,sy+sh,-1,0],[sx+sw,sy+sh,0,-1]
-    ].forEach(([cx,cy,dx,dy])=>{
-      ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+dx*cs,cy+dy*cs);ctx.stroke();
-    });
-  } else {
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([6,4]);
-    const gw = canvas.width*0.7, gh = canvas.height*0.4;
-    const gx = (canvas.width-gw)/2, gy = (canvas.height-gh)/2;
-    ctx.strokeRect(gx, gy, gw, gh);
-    ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.font = '13px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Arrastra para seleccionar la zona de ingredientes', canvas.width/2, canvas.height/2);
-  }
-}
-
-function getPosCanvas(e, canvas) {
-  const r = canvas.getBoundingClientRect();
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  return { x: (clientX - r.left) / canvas._scale, y: (clientY - r.top) / canvas._scale };
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  const canvas = document.getElementById('crop-canvas');
-  function onStart(e) {
-    e.preventDefault();
-    const pos = getPosCanvas(e, canvas);
-    cropState.drawing = true;
-    cropState.startX = pos.x;
-    cropState.startY = pos.y;
-    cropState.rect = null;
-  }
-  function onMove(e) {
-    if (!cropState.drawing) return;
-    e.preventDefault();
-    const pos = getPosCanvas(e, canvas);
-    const x = Math.max(0, Math.min(cropState.startX, pos.x));
-    const y = Math.max(0, Math.min(cropState.startY, pos.y));
-    const w = Math.min(Math.abs(pos.x - cropState.startX), cropState.imgNaturalW - x);
-    const h = Math.min(Math.abs(pos.y - cropState.startY), cropState.imgNaturalH - y);
-    cropState.rect = {x, y, w, h};
-    dibujarCropCanvas(cropState.rect);
-  }
-  function onEnd(e) {
-    e.preventDefault();
-    cropState.drawing = false;
-    if (cropState.rect && (cropState.rect.w < 20 || cropState.rect.h < 20)) {
-      cropState.rect = null;
-      dibujarCropCanvas(null);
-    }
-  }
-  canvas.addEventListener('mousedown', onStart);
-  canvas.addEventListener('mousemove', onMove);
-  canvas.addEventListener('mouseup', onEnd);
-  canvas.addEventListener('touchstart', onStart, {passive:false});
-  canvas.addEventListener('touchmove', onMove, {passive:false});
-  canvas.addEventListener('touchend', onEnd, {passive:false});
-});
-
-function resetCrop() {
-  cropState.rect = null;
-  dibujarCropCanvas(null);
-}
-
-function cerrarCrop() {
-  document.getElementById('crop-overlay').style.display = 'none';
-}
-
-function confirmarCrop() {
-  if (!cropState.rect || cropState.rect.w < 20 || cropState.rect.h < 20) {
-    alert('Por favor arrastra para seleccionar una zona de la imagen.');
-    return;
-  }
-  const tmpCanvas = document.createElement('canvas');
-  const r = cropState.rect;
-  const pad = Math.round(Math.min(r.w, r.h) * 0.03);
-  const rx = Math.max(0, r.x - pad);
-  const ry = Math.max(0, r.y - pad);
-  const rw = Math.min(cropState.imgNaturalW - rx, r.w + pad * 2);
-  const rh = Math.min(cropState.imgNaturalH - ry, r.h + pad * 2);
-  tmpCanvas.width = rw;
-  tmpCanvas.height = rh;
-  const tmpCtx = tmpCanvas.getContext('2d');
-  const img = document.getElementById('crop-canvas')._img;
-  tmpCtx.drawImage(img, rx, ry, rw, rh, 0, 0, rw, rh);
-  cropState.croppedDataUrl = tmpCanvas.toDataURL('image/jpeg', 0.97);
-  document.getElementById('crop-preview-txt').textContent =
-    'Zona seleccionada (' + Math.round(rw) + '×' + Math.round(rh) + 'px) — solo esa área será analizada';
-  document.getElementById('crop-preview-info').style.display = 'flex';
-  const hint = document.getElementById('crop-hint-badge');
-  if (hint) hint.style.display = 'none';
-  cerrarCrop();
-}
-
-function limpiarCropPreview() {
-  cropState.croppedDataUrl = null;
-  cropState.rect = null;
-  document.getElementById('crop-preview-info').style.display = 'none';
-  const hint = document.getElementById('crop-hint-badge');
-  if (hint) hint.style.display = '';
-}
-
-// CAMARA
-let vids2=null;
-async function toggleCam(){
-  if(vids2){stopCamMain();return;}
-  try{
-    vids2=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}});
-    document.getElementById('vid2').srcObject=vids2;
-    document.getElementById('vid-wrap2').style.display='block';
-    document.getElementById('btn-cam').innerHTML='<svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:white;fill:none;stroke-width:2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34"/></svg> Detener cámara';
-  }catch{alert('No se pudo acceder a la cámara. Usa Galería / Subir foto.');}
-}
-function stopCamMain(){if(vids2){vids2.getTracks().forEach(t=>t.stop());vids2=null;}document.getElementById('vid-wrap2').style.display='none';document.getElementById('btn-cam').innerHTML='<svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:white;fill:none;stroke-width:2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Escanear ingredientes';}
-function capturarMain(){const v=document.getElementById('vid2'),c=document.getElementById('cnv2');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);showPrevMain(c.toDataURL('image/jpeg',0.95));stopCamMain();}
-function loadImgMain(e){
-  const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{const img=new Image();img.onload=()=>{const MAX=2048;let w=img.width,h=img.height;if(w>MAX||h>MAX){const s=Math.min(MAX/w,MAX/h);w=Math.round(w*s);h=Math.round(h*s);}const c=document.getElementById('cnv2');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);showPrevMain(c.toDataURL('image/jpeg',0.95));};img.src=ev.target.result;};
-  r.readAsDataURL(f);e.target.value='';
-}
-function showPrevMain(url){
-  cropState.fullDataUrl = url;
-  cropState.croppedDataUrl = null;
-  cropState.rect = null;
-  document.getElementById('prev-img2').src=url;
-  document.getElementById('prev-wrap2').style.display='block';
-  document.getElementById('vid-wrap2').style.display='none';
-  document.getElementById('cb-main').innerHTML='';
-  document.getElementById('crop-preview-info').style.display='none';
-  const hint=document.getElementById('crop-hint-badge');
-  if(hint)hint.style.display='';
-  activarSemaforo(null);
-}
-function resetCamMain(){
-  cropState.fullDataUrl=null;cropState.croppedDataUrl=null;cropState.rect=null;
-  document.getElementById('prev-wrap2').style.display='none';
-  document.getElementById('cb-main').innerHTML='';
-  activarSemaforo(null);
-}
-
-// ANALIZAR CON IA
-async function analizarImgMain(){
-  const btn=document.getElementById('btn-ai2');
-  const imgSrc = cropState.croppedDataUrl || cropState.fullDataUrl || document.getElementById('prev-img2').src;
-  const esCortada = !!cropState.croppedDataUrl;
-  btn.disabled=true;btn.innerHTML='<span class="lds"><span></span><span></span><span></span></span> Analizando...';
-  document.getElementById('cb-main').innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--text-3)"><span class="lds"><span></span><span></span><span></span></span><div style="margin-top:8px;font-size:12px">'+(esCortada?'Analizando zona seleccionada...':'La IA está leyendo los ingredientes...')+'</div></div>';
-  try{
-    const b64=imgSrc.split(',')[1];
-    const mediaType=imgSrc.split(';')[0].split(':')[1]||'image/jpeg';
-    const res=await fetch('/api/analizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageBase64:b64,mediaType,userId:localStorage.getItem('lubo_uid')||'anon',userName:localStorage.getItem('lubo_nombre')||'Usuario'})});
-    const data=await res.json();
-    if(!res.ok)throw new Error(data.error||'Error del servidor');
-    mostrarResMain(data);
-  }catch(e){
-    document.getElementById('cb-main').innerHTML='<div style="padding:1rem;background:#fff8f0;border-radius:10px;font-size:13px;color:var(--text-2);line-height:1.6"><b>No se pudo leer la imagen.</b><br>• 🔍 Amplía la imagen y verifica legibilidad<br>• 📸 Toma foto más cercana con buena luz<br>• 🔆 Evita reflejos o sombras sobre el texto</div>';
-  }
-  btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:white;fill:none;stroke-width:2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Analizar con IA';
-}
-
-// MOSTRAR RESULTADOS
-function mostrarResMain(p){
-  if(p.error==='imagen_no_legible'||(!p.ingredientes?.length&&!p.coincidencias?.length)){
-    document.getElementById('cb-main').innerHTML='<div style="padding:1rem;background:#fff8f0;border-radius:10px;font-size:13px;color:var(--text-2);line-height:1.6"><b>No se pudo leer la imagen.</b><br>• 🔍 Amplía la imagen<br>• 📸 Foto más cercana con buena luz<br>• 🔆 Evita reflejos</div>';
-    return;
-  }
-  const total=p.ingredientes?.length||0;
-  const coincidenciasRaw=p.coincidencias||[];
-  const naturales=p.naturales||[];
-  const sinteticos=p.sinteticos_desconocidos||[];
-  const coins=coincidenciasRaw.map(n=>DB.find(q=>q.nombre.toLowerCase()===n.toLowerCase()||q.nombre.toLowerCase().includes(n.toLowerCase().split(' ')[0]))).filter(Boolean);
-  const unicas=[...new Map(coins.map(q=>[q.nombre,q])).values()];
-  const rojos=unicas.filter(q=>q.semaforo==='rojo');
-  const amars=unicas.filter(q=>q.semaforo==='amarillo');
-  const pct=total>0?(coincidenciasRaw.length/total)*100:0;
-  let clsf=p.clasificacion_sugerida||'verde';
-  if(rojos.length>0||pct>30)clsf='rojo';
-  else if(amars.length>0||coincidenciasRaw.length>0)clsf='amarillo';
-  activarSemaforo(clsf);
-  registrarAnalisis({...p,clasificacion_sugerida:clsf});
-  let html='';
-  if(clsf==='rojo')html+='<div class="no-consumir">🚫 NO CONSUMIR — Contiene químicos peligrosos</div>';
-  html+=unicas.length>0?`<div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:9px">⚠ ${unicas.length} químico${unicas.length>1?'s':''} detectado${unicas.length>1?'s':''} en ${total} ingredientes leídos</div>`:`<div style="font-size:13px;font-weight:500;color:var(--green-dark);margin-bottom:9px">✅ Producto limpio — ${total} ingredientes leídos</div>`;
-  html+='<div class="finds">';
-  rojos.forEach(q=>{html+=`<div class="fi fi-r"><div class="fi-dot" style="background:#ff6161"></div><div class="fi-body"><div class="fi-name">⚠ ${q.nombre}</div><div class="fi-risk">${q.riesgo} · ${q.uso}</div></div></div>`;});
-  amars.forEach(q=>{html+=`<div class="fi fi-a"><div class="fi-dot" style="background:#ebb414"></div><div class="fi-body"><div class="fi-name">⚡ ${q.nombre}</div><div class="fi-risk">${q.riesgo} · ${q.uso}</div></div></div>`;});
-  if(naturales.length>0)html+=`<div class="fi fi-v" style="cursor:pointer" onclick="this.querySelector('.ing-list').classList.toggle('open')"><div class="fi-dot" style="background:#53bb26"></div><div class="fi-body"><div class="fi-name">🌿 ${naturales.length} natural${naturales.length>1?'es':''} <span style="font-size:10px;color:var(--text-3)">(toca para ver)</span></div><div class="ing-list">${naturales.join(' · ')}</div></div></div>`;
-  if(sinteticos.length>0)html+=`<div class="fi fi-n" style="cursor:pointer" onclick="this.querySelector('.ing-list').classList.toggle('open')"><div class="fi-dot" style="background:#9e9b94"></div><div class="fi-body"><div class="fi-name">🔬 ${sinteticos.length} sintético${sinteticos.length>1?'s':''} no nocivo${sinteticos.length>1?'s':''} <span style="font-size:10px;color:var(--text-3)">(toca para ver)</span></div><div class="ing-list">${sinteticos.join(' · ')}</div></div></div>`;
-  html+='</div>';
-  if(pct>0)html+=`<div style="margin-top:8px;font-size:11px;color:var(--text-3);text-align:center">${coincidenciasRaw.length} de ${total} ingredientes en lista de riesgo (${Math.round(pct)}%)</div>`;
-  document.getElementById('cb-main').innerHTML=html;
-}
-
-// PWA
-let deferredPrompt=null;
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('ib').style.display='flex';});
-document.getElementById('btn-install')?.addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();const{outcome}=await deferredPrompt.userChoice;deferredPrompt=null;document.getElementById('ib').style.display='none';});
-document.getElementById('close-install')?.addEventListener('click',()=>{document.getElementById('ib').style.display='none';});
-
-// ID usuario local
-(function(){let uid=localStorage.getItem('lubo_uid');if(!uid){uid='u_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);localStorage.setItem('lubo_uid',uid);}})();
-</script>
-
-<!-- ARCHIVOS EXTERNOS (se cargan al final para optimizar) -->
-<script src="js/utils.js"></script>
-<script src="js/semaforo.js"></script>
-<script src="js/scanner.js"></script>
-<script src="data/db-naturales.js"></script>
-
+        // ZOOM IMAGE
+        function zoomImagen(src) {
+            const modal = document.getElementById('zoomModal') || document.createElement('div');
+            modal.id = 'zoomModal';
+            modal.className = 'modal active';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <button class="modal-close" onclick="this.parentElement.parentElement.remove()">×</button>
+                    <img src="${src}" alt="Zoom">
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+    </script>
 </body>
 </html>
