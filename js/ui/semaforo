@@ -1,0 +1,55 @@
+var SemaforoUI = {
+  render: function(result) {
+    var section = document.getElementById('semaforo-section');
+    var container = document.getElementById('semaforo-result');
+    var co = result.coincidencias || [];
+    var il = result.ingredientesLeidos || [];
+
+    if (result.error && !co.length) {
+      container.innerHTML = '<div class="semaforo-card rojo"><p style="font-size:1rem;color:#a00">Error: ' + result.error + '</p></div>';
+      section.hidden = false; return;
+    }
+
+    var estado = SemaforoModule.evaluate(co);
+    var cfg    = SemaforoModule.getConfig(estado);
+    var coHtml = '';
+
+    if (co.length) {
+      for (var i = 0; i < co.length; i++) {
+        coHtml += '<div class="ingrediente-item">' +
+          '<span class="badge ' + SemaforoModule.getBadgeClass(co[i].nocividad) + '">' + co[i].nocividad + '%</span>' +
+          '<span><strong>' + co[i].nombreDetectado + '</strong></span>' +
+          '<span style="color:var(--muted);font-size:.85rem;margin-left:auto">' + co[i].clasificacion + '</span>' +
+          '</div>';
+      }
+    } else {
+      coHtml = '<p style="color:var(--muted)">No se encontraron quimicos de la lista en este producto.</p>';
+    }
+
+    var lHtml = '';
+    if (il.length) {
+      var lis = '';
+      for (var j = 0; j < il.length; j++) lis += '<li>' + il[j] + '</li>';
+      lHtml = '<details class="ingredientes-leidos"><summary>Ver todos los ingredientes leidos (' + il.length + ')</summary><ul>' + lis + '</ul></details>';
+    }
+
+    container.innerHTML =
+      '<div class="semaforo-card ' + cfg.clase + '">' +
+        '<div class="semaforo-header"><div class="semaforo-luz">' + cfg.emoji + '</div>' +
+        '<div><div class="semaforo-titulo">' + cfg.titulo + '</div>' +
+        '<div class="semaforo-mensaje">' + cfg.mensaje + '</div></div></div>' +
+        '<div class="ingredientes-section"><h3>Quimicos detectados (' + co.length + ')</h3>' + coHtml + '</div>' +
+        lHtml +
+        '<div class="btn-rescan"><button class="btn-outline" onclick="App.reset()">Escanear otro producto</button></div>' +
+      '</div>';
+
+    section.hidden = false;
+    section.scrollIntoView({ behavior: 'smooth' });
+  },
+
+  hide: function() {
+    document.getElementById('semaforo-section').hidden = true;
+    document.getElementById('semaforo-result').innerHTML = '';
+  }
+};
+window.SemaforoUI = SemaforoUI;
