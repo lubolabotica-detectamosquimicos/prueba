@@ -1,719 +1,81 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#53bb26">
-    <meta name="description" content="LuBo La Botica - Detector de químicos nocivos en ingredientes">
-    <title>🌿 LuBo La Botica - Detector de Ingredientes</title>
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Estilos Variables -->
-    <link rel="stylesheet" href="css/variables.css">
-    
-    <!-- Estilos UI -->
-    <link rel="stylesheet" href="css/styles.css">
-    
-    <style>
-        :root {
-            --brand-green: #53bb26;
-            --brand-red: #ef4444;
-            --brand-yellow: #fbbf24;
-            --text-primary: #1a1916;
-            --text-secondary: #5a5751;
-            --bg-light: #fefefe;
-            --bg-gray: #f5f4f0;
-            --border-color: #e5e1d8;
-            --font-body: 'Fredoka', sans-serif;
-            --font-size-sm: 0.75rem;
-            --font-size-base: 1rem;
-            --font-size-lg: 1.125rem;
-            --font-size-xl: 1.5rem;
-            --font-size-2xl: 2rem;
-            --spacing-xs: 0.5rem;
-            --spacing-sm: 1rem;
-            --spacing-md: 1.5rem;
-            --spacing-lg: 2rem;
-            --spacing-xl: 3rem;
-            --radius-sm: 0.375rem;
-            --radius-md: 0.5rem;
-            --radius-lg: 1rem;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: var(--font-body);
-            background-color: var(--bg-light);
-            color: var(--text-primary);
-            line-height: 1.6;
-        }
-
-        /* HEADER */
-        .header {
-            background: linear-gradient(135deg, var(--brand-green) 0%, #45a620 100%);
-            color: white;
-            padding: var(--spacing-lg);
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(83, 187, 38, 0.15);
-        }
-
-        .header h1 {
-            font-size: var(--font-size-2xl);
-            margin-bottom: var(--spacing-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-sm);
-        }
-
-        .header p {
-            font-size: var(--font-size-sm);
-            opacity: 0.95;
-        }
-
-        /* MAIN CONTAINER */
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: var(--spacing-lg);
-        }
-
-        /* TITLE SECTION */
-        .title-section {
-            text-align: center;
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .title-section h2 {
-            font-size: var(--font-size-xl);
-            margin-bottom: var(--spacing-md);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-primary);
-        }
-
-        /* IMAGE INPUT */
-        .image-input-section {
-            background: var(--bg-gray);
-            border: 2px dashed var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-lg);
-            text-align: center;
-            margin-bottom: var(--spacing-lg);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .image-input-section:hover {
-            border-color: var(--brand-green);
-            background-color: rgba(83, 187, 38, 0.05);
-        }
-
-        .image-input-section input[type="file"] {
-            display: none;
-        }
-
-        .upload-icon {
-            font-size: 3rem;
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .upload-text {
-            font-size: var(--font-size-base);
-            color: var(--text-secondary);
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .upload-buttons {
-            display: flex;
-            gap: var(--spacing-md);
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: var(--spacing-sm) var(--spacing-md);
-            border: none;
-            border-radius: var(--radius-md);
-            font-family: var(--font-body);
-            font-size: var(--font-size-sm);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-        }
-
-        .btn-primary {
-            background-color: var(--brand-green);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: #45a620;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(83, 187, 38, 0.3);
-        }
-
-        .btn-secondary {
-            background-color: white;
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-        }
-
-        .btn-secondary:hover {
-            border-color: var(--brand-green);
-            color: var(--brand-green);
-        }
-
-        /* CANVAS SECTION */
-        #canvasContainer {
-            display: none;
-            margin-bottom: var(--spacing-lg);
-            background: var(--bg-gray);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-lg);
-        }
-
-        #canvas {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin-bottom: var(--spacing-md);
-            border-radius: var(--radius-md);
-        }
-
-        .canvas-controls {
-            display: flex;
-            gap: var(--spacing-sm);
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        /* SEMÁFORO */
-        .semaforo-container {
-            text-align: center;
-            margin-bottom: var(--spacing-xl);
-            display: none;
-        }
-
-        .semaforo {
-            width: 150px;
-            height: 300px;
-            margin: var(--spacing-lg) auto;
-            background: linear-gradient(135deg, #333 0%, #1a1a1a 100%);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-md);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around;
-        }
-
-        .semaforo-light {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            margin: 0 auto;
-            background: #555;
-            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        .semaforo-light.rojo {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            box-shadow: 0 0 30px rgba(239, 68, 68, 0.8), inset 0 2px 5px rgba(0, 0, 0, 0.3);
-        }
-
-        .semaforo-light.amarillo {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            box-shadow: 0 0 30px rgba(251, 191, 36, 0.8), inset 0 2px 5px rgba(0, 0, 0, 0.3);
-        }
-
-        .semaforo-light.verde {
-            background: linear-gradient(135deg, var(--brand-green) 0%, #45a620 100%);
-            box-shadow: 0 0 30px rgba(83, 187, 38, 0.8), inset 0 2px 5px rgba(0, 0, 0, 0.3);
-        }
-
-        .semaforo-light.active {
-            animation: pulse 0.5s ease-in-out;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        .semaforo-label {
-            font-size: var(--font-size-base);
-            font-weight: 600;
-            margin-top: var(--spacing-lg);
-        }
-
-        .semaforo-label.rojo {
-            color: var(--brand-red);
-        }
-
-        .semaforo-label.amarillo {
-            color: var(--brand-yellow);
-        }
-
-        .semaforo-label.verde {
-            color: var(--brand-green);
-        }
-
-        .peligro-banner {
-            background: var(--brand-red);
-            color: white;
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            text-align: center;
-            font-weight: 700;
-            font-size: var(--font-size-base);
-            margin-bottom: var(--spacing-md);
-            animation: pulse 0.8s ease-in-out infinite;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        /* RESULTADOS */
-        .resultados-container {
-            display: none;
-        }
-
-        .resultado-item {
-            background: white;
-            border-left: 4px solid;
-            padding: var(--spacing-md);
-            margin-bottom: var(--spacing-md);
-            border-radius: var(--radius-md);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-
-        .resultado-item.rojo {
-            border-left-color: var(--brand-red);
-        }
-
-        .resultado-item.amarillo {
-            border-left-color: var(--brand-yellow);
-        }
-
-        .resultado-item.verde {
-            border-left-color: var(--brand-green);
-        }
-
-        .resultado-nombre {
-            font-weight: 700;
-            font-size: var(--font-size-base);
-            margin-bottom: var(--spacing-xs);
-        }
-
-        .resultado-nocividad {
-            font-size: var(--font-size-sm);
-            color: var(--text-secondary);
-        }
-
-        /* MODAL ZOOM */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            position: relative;
-            max-width: 90%;
-            max-height: 90%;
-        }
-
-        .modal-content img {
-            width: 100%;
-            height: auto;
-            border-radius: var(--radius-lg);
-        }
-
-        .modal-close {
-            position: absolute;
-            top: -40px;
-            right: 0;
-            background: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        /* FOOTER */
-        .footer {
-            text-align: center;
-            padding: var(--spacing-lg);
-            color: var(--text-secondary);
-            font-size: var(--font-size-sm);
-            border-top: 1px solid var(--border-color);
-            margin-top: var(--spacing-xl);
-        }
-
-        /* RESPONSIVE */
-        @media (max-width: 768px) {
-            .container {
-                padding: var(--spacing-md);
-            }
-
-            .header h1 {
-                font-size: var(--font-size-xl);
-            }
-
-            .semaforo {
-                width: 120px;
-                height: 240px;
-            }
-
-            .semaforo-light {
-                width: 100px;
-                height: 100px;
-            }
-        }
-
-        /* POPUP BIENVENIDA */
-        .popup-container {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-            padding: var(--spacing-md);
-        }
-
-        .popup-container.active {
-            display: flex;
-        }
-
-        .popup-content {
-            background: white;
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-lg);
-            max-width: 500px;
-            width: 100%;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-        }
-
-        .popup-close {
-            float: right;
-            background: none;
-            border: none;
-            font-size: var(--font-size-xl);
-            cursor: pointer;
-            color: var(--text-secondary);
-        }
-
-        .popup-title {
-            font-size: var(--font-size-lg);
-            margin-bottom: var(--spacing-md);
-            color: var(--brand-green);
-        }
-
-        .popup-form input {
-            width: 100%;
-            padding: var(--spacing-sm);
-            margin-bottom: var(--spacing-md);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            font-family: var(--font-body);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuBo la Botica - Vida sin quimicos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- HEADER -->
-    <header class="header">
-        <h1>
-            <span style="font-size: 1.8em;">🌿</span>
-            LuBo La Botica
-        </h1>
-        <p>Detector de químicos nocivos en ingredientes</p>
-    </header>
-
-    <!-- MAIN CONTENT -->
-    <div class="container">
-        <!-- SECCIÓN TÍTULO -->
-        <section class="title-section">
-            <h2>Analizar Etiqueta de Ingredientes</h2>
-        </section>
-
-        <!-- SECCIÓN CARGA DE IMAGEN -->
-        <section class="image-input-section" id="imageInputSection">
-            <div class="upload-icon">📸</div>
-            <p class="upload-text">o sube una foto</p>
-            <input type="file" id="fileInput" accept="image/*">
-            <div class="upload-buttons">
-                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
-                    📷 Galería / Subir foto
-                </button>
-                <button class="btn btn-secondary" onclick="abrirCamara()">
-                    📹 Cámara
-                </button>
-            </div>
-        </section>
-
-        <!-- CANVAS PARA CROP -->
-        <div id="canvasContainer">
-            <canvas id="canvas"></canvas>
-            <div class="canvas-controls">
-                <button class="btn btn-primary" onclick="confirmarCrop()">✓ Confirmar selección</button>
-                <button class="btn btn-secondary" onclick="resetCrop()">↻ Limpiar</button>
-            </div>
-        </div>
-
-        <!-- SEMÁFORO -->
-        <div class="semaforo-container" id="semaforoContainer">
-            <div class="semaforo" id="semaforo">
-                <div class="semaforo-light" id="light1"></div>
-                <div class="semaforo-light" id="light2"></div>
-                <div class="semaforo-light" id="light3"></div>
-            </div>
-            <div class="semaforo-label" id="semaforoLabel"></div>
-        </div>
-
-        <!-- BANNER PELIGRO -->
-        <div class="peligro-banner" id="peligroBanner" style="display:none;">
-            🚫 NO CONSUMIR - Contiene químicos nocivos (>30%)
-        </div>
-
-        <!-- RESULTADOS -->
-        <div class="resultados-container" id="resultadosContainer">
-            <h3 style="margin-bottom: var(--spacing-md); font-size: var(--font-size-lg);">Ingredientes detectados:</h3>
-            <div id="resultadosList"></div>
-        </div>
+  <div id="intro-modal" class="modal-overlay" hidden>
+    <div class="modal-box">
+      <img src="assets/logos/logo-lubo.png" alt="LuBo la Botica" class="modal-logo-img">
+      <p class="modal-subtitle">Detectamos quimicos nocivos</p>
+      <p class="modal-desc">Antes de comenzar, cuentanos quien eres</p>
+      <form id="intro-form" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+        <input type="text" name="nombre" placeholder="Tu nombre" required>
+        <input type="email" name="email" placeholder="Tu correo electronico" required>
+        <button type="submit" class="btn-primary">Entrar a la app &rarr;</button>
+      </form>
     </div>
-
-    <!-- FOOTER -->
-    <footer class="footer">
-        <p>🌿 LuBo La Botica | Detector de químicos • <a href="https://lubo-labotica.com" style="color: var(--brand-green); text-decoration: none;">lubo-labotica.com</a></p>
-    </footer>
-
-    <!-- POPUP BIENVENIDA -->
-    <div class="popup-container" id="popupContainer">
-        <div class="popup-content">
-            <button class="popup-close" onclick="cerrarPopup()">✕</button>
-            <h2 class="popup-title">🌿 Bienvenido a LuBo La Botica</h2>
-            <p style="margin-bottom: var(--spacing-md); color: var(--text-secondary);">
-                Detecta químicos nocivos en tus productos favoritos. Escanea la etiqueta de ingredientes y conoce qué hay realmente en lo que compras.
-            </p>
-            <form class="popup-form" onsubmit="guardarUsuario(event)">
-                <input type="text" id="userName" placeholder="Tu nombre" required>
-                <input type="email" id="userEmail" placeholder="Tu email" required>
-                <button class="btn btn-primary" style="width: 100%; justify-content: center;">Comenzar</button>
-            </form>
-        </div>
+  </div>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <img src="assets/logos/logo-lubo.png" alt="LuBo la Botica" class="header-logo">
+        <a href="https://www.lubo-labotica.com" target="_blank" rel="noopener" class="header-url">www.lubo-labotica.com</a>
+      </div>
+      <p class="header-tagline">Detectamos quimicos nocivos</p>
     </div>
-
-    <!-- SCRIPTS -->
-    <script src="js/scanner.js"></script>
-    <script src="data/db-naturales.js"></script>
-    <script src="js/utils.js"></script>
-
-    <script>
-        // Estado global
-        let imagenActual = null;
-        let usuarioRegistrado = false;
-
-        // Inicializar popup
-        window.addEventListener('load', () => {
-            const visto = localStorage.getItem('visto');
-            if (!visto) {
-                document.getElementById('popupContainer').classList.add('active');
-            }
-        });
-
-        function guardarUsuario(e) {
-            e.preventDefault();
-            const nombre = document.getElementById('userName').value;
-            const email = document.getElementById('userEmail').value;
-            
-            localStorage.setItem('visto', 'listo');
-            localStorage.setItem('userName', nombre);
-            localStorage.setItem('userEmail', email);
-            usuarioRegistrado = true;
-            
-            cerrarPopup();
-            registrarEstadistica('usuario_registrado', {nombre, email});
-        }
-
-        function cerrarPopup() {
-            document.getElementById('popupContainer').classList.remove('active');
-        }
-
-        // INPUT FILE
-        document.getElementById('fileInput').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    imagenActual = event.target.result;
-                    mostrarCanvasParaCrop(imagenActual);
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        function abrirCamara() {
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-                .then(stream => {
-                    const video = document.createElement('video');
-                    video.srcObject = stream;
-                    video.play();
-                    
-                    const canvas = document.createElement('canvas');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    
-                    setTimeout(() => {
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(video, 0, 0);
-                        imagenActual = canvas.toDataURL('image/jpeg');
-                        mostrarCanvasParaCrop(imagenActual);
-                        stream.getTracks().forEach(track => track.stop());
-                    }, 1000);
-                })
-                .catch(err => alert('Error al acceder a la cámara: ' + err.message));
-        }
-
-        // SEMÁFORO
-        function mostrarSemaforo(categoria) {
-            const container = document.getElementById('semaforoContainer');
-            const light1 = document.getElementById('light1');
-            const light2 = document.getElementById('light2');
-            const light3 = document.getElementById('light3');
-            const label = document.getElementById('semaforoLabel');
-            
-            // Reset
-            [light1, light2, light3].forEach(l => {
-                l.classList.remove('rojo', 'amarillo', 'verde', 'active');
-            });
-            
-            if (categoria === 'ROJO') {
-                light1.classList.add('rojo', 'active');
-                label.className = 'semaforo-label rojo';
-                label.textContent = '🔴 PELIGROSO';
-                document.getElementById('peligroBanner').style.display = 'block';
-            } else if (categoria === 'AMARILLO') {
-                light2.classList.add('amarillo', 'active');
-                label.className = 'semaforo-label amarillo';
-                label.textContent = '🟡 PRECAUCIÓN';
-                document.getElementById('peligroBanner').style.display = 'none';
-            } else if (categoria === 'VERDE') {
-                light3.classList.add('verde', 'active');
-                label.className = 'semaforo-label verde';
-                label.textContent = '🟢 SEGURO';
-                document.getElementById('peligroBanner').style.display = 'none';
-            }
-            
-            container.style.display = 'block';
-        }
-
-        // ANALIZAR IMAGEN
-        async function analizarImagen() {
-            if (!imagenActual) {
-                alert('Por favor carga una imagen primero');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/analizar', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ imagen: imagenActual })
-                });
-                
-                const resultado = await response.json();
-                mostrarResultados(resultado.ingredientes);
-            } catch (error) {
-                console.error('Error al analizar:', error);
-                alert('Error al analizar la imagen. Intenta de nuevo.');
-            }
-        }
-
-        function mostrarResultados(ingredientes) {
-            const container = document.getElementById('resultadosContainer');
-            const lista = document.getElementById('resultadosList');
-            
-            lista.innerHTML = '';
-            
-            let categoriaMaxima = 'VERDE';
-            let nocividadMaxima = 0;
-            
-            ingredientes.forEach(ing => {
-                const item = document.createElement('div');
-                item.className = `resultado-item ${ing.categoria.toLowerCase()}`;
-                item.innerHTML = `
-                    <div class="resultado-nombre">${ing.nombre}</div>
-                    <div class="resultado-nocividad">Nocividad: ${ing.nocividad}%</div>
-                `;
-                lista.appendChild(item);
-                
-                if (ing.nocividad > nocividadMaxima) {
-                    nocividadMaxima = ing.nocividad;
-                    categoriaMaxima = ing.categoria;
-                }
-            });
-            
-            mostrarSemaforo(categoriaMaxima);
-            container.style.display = 'block';
-            registrarEstadistica('analisis_completado', {total: ingredientes.length});
-        }
-
-        // ESTADÍSTICAS
-        function registrarEstadistica(tipo, datos = {}) {
-            const stats = JSON.parse(localStorage.getItem('stats') || '{}');
-            stats[tipo] = (stats[tipo] || 0) + 1;
-            localStorage.setItem('stats', JSON.stringify(stats));
-            
-            // Enviar a servidor opcional
-            fetch('/api/stats', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({tipo, datos, timestamp: new Date()})
-            }).catch(() => {});
-        }
-
-        // ZOOM IMAGE
-        function zoomImagen(src) {
-            const modal = document.getElementById('zoomModal') || document.createElement('div');
-            modal.id = 'zoomModal';
-            modal.className = 'modal active';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <button class="modal-close" onclick="this.parentElement.parentElement.remove()">×</button>
-                    <img src="${src}" alt="Zoom">
-                </div>
-            `;
-            document.body.appendChild(modal);
-        }
-    </script>
+  </header>
+  <main class="app-main">
+    <section class="scanner-section" id="scanner-section">
+      <h2 class="section-title">Escanea los ingredientes</h2>
+      <p class="section-desc">Apunta la camara a la lista de ingredientes y selecciona el area a analizar.</p>
+      <div class="scanner-container">
+        <div class="scanner-viewport" id="scanner-viewport">
+          <video id="scanner-video" autoplay playsinline muted></video>
+          <canvas id="scanner-canvas" hidden></canvas>
+          <div id="crop-overlay" class="crop-overlay" hidden>
+            <div id="crop-box" class="crop-box"></div>
+          </div>
+          <div class="scanner-placeholder" id="scanner-placeholder">
+            <div class="scanner-icon">&#128247;</div>
+            <p>Toca para activar la camara</p>
+          </div>
+        </div>
+        <div class="scanner-controls">
+          <button class="btn-primary" id="btn-start-camera">&#128247; Activar camara</button>
+          <button class="btn-secondary" id="btn-select-area" disabled>&#9986; Seleccionar area</button>
+          <button class="btn-accent" id="btn-analyze" disabled>&#128269; Analizar</button>
+          <button class="btn-outline" id="btn-upload">&#128193; Subir imagen</button>
+        </div>
+        <input type="file" id="file-input" accept="image/*" hidden>
+      </div>
+    </section>
+    <section class="semaforo-section" id="semaforo-section" hidden>
+      <div id="semaforo-result"></div>
+    </section>
+    <div class="loading-overlay" id="loading-overlay" hidden>
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Analizando ingredientes...</p>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <p>&copy; 2025 <a href="https://www.lubo-labotica.com" target="_blank">LuBo la Botica</a> &middot; Vida sin quimicos</p>
+  </footer>
+  <script src="js/components/modal.js"></script>
+  <script src="js/components/form.js"></script>
+  <script src="js/services/api.js"></script>
+  <script src="js/modules/scanner.js"></script>
+  <script src="js/modules/semaforo.js"></script>
+  <script src="js/ui/scanner.js"></script>
+  <script src="js/ui/semaforo.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
