@@ -1,0 +1,19 @@
+var Modal = {
+  _timer: null,
+  show: function(msg, type) {
+    var el = document.getElementById('lubo-toast');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'lubo-toast';
+      el.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);' +
+        'color:white;padding:.75rem 1.5rem;border-radius:9999px;font-family:var(--font);' +
+        'font-size:.95rem;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3);' +
+        'transition:opacity .3s;max-width:90vw;text-align:center;pointer-events:none;';
+      document.body.appendChild(el);
+    }
+    el.style.background = type==='error'?'#ff6161':type==='success'?'#53bb26':'#441d1d';
+    el.textContent = msg; el.style.opacity = '1';
+    clearTimeout(Modal._timer);
+    Modal._timer = setTimeout(function() { el.style.opacity='0'; }, 3500);
+  }
+};
+window.Modal = Modal;
