@@ -1,0 +1,63 @@
+var ScannerModule = {
+  stream: null, cropRect: null, imageData: null,
+
+  startCamera: function() {
+    var c = { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } } };
+    return navigator.mediaDevices.getUserMedia(c).then(function(s) {
+      ScannerModule.stream = s;
+      var v = document.getElementById('scanner-video');
+      v.srcObject = s;
+      document.getElementById('scanner-placeholder').hidden = true;
+    });
+  },
+
+  stopCamera: function() {
+    if (ScannerModule.stream) {
+      ScannerModule.stream.getTracks().forEach(function(t) { t.stop(); });
+      ScannerModule.stream = null;
+    }
+  },
+
+  captureFullFrame: function() {
+    var v = document.getElementById('scanner-video');
+    var c = document.getElementById('scanner-canvas');
+    c.width = v.videoWidth || 640; c.height = v.videoHeight || 480;
+    c.getContext('2d').drawImage(v, 0, 0);
+    return c.toDataURL('image/jpeg', 0.92);
+  },
+
+  captureWithCrop: function() {
+    if (!ScannerModule.cropRect) return ScannerModule.captureFullFrame();
+    var v  = document.getElementById('scanner-video');
+    var vp = document.getElementById('scanner-viewport');
+    var c  = document.getElementById('scanner-canvas');
+    var sx = v.videoWidth  / vp.offsetWidth;
+    var sy = v.videoHeight / vp.offsetHeight;
+    var r  = ScannerModule.cropRect;
+    c.width  = Math.round(r.w * sx);
+    c.height = Math.round(r.h * sy);
+    c.getContext('2d').drawImage(v, Math.round(r.x*sx), Math.round(r.y*sy),
+      Math.round(r.w*sx), Math.round(r.h*sy), 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.92);
+  },
+
+  loadImageFile: function(file) {
+    return new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var img = new Image();
+        img.onload = function() {
+          var c = document.getElementById('scanner-canvas');
+          c.width = img.width; c.height = img.height;
+          c.getContext('2d').drawImage(img, 0, 0);
+          resolve(c.toDataURL('image/jpeg', 0.92));
+        };
+        img.onerror = reject; img.src = e.target.result;
+      };
+      reader.onerror = reject; reader.readAsDataURL(file);
+    });
+  },
+
+  toBase64: function(dataURL) { return dataURL.split(',')[1]; }
+};
+window.ScannerModule = ScannerModule;
