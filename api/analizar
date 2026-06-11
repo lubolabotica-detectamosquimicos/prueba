@@ -1,294 +1,111 @@
-/**
- * API: /api/analizar
- * 
- * Analyzes product ingredient labels using Google Gemini Vision API
- * Classifies ingredients using ONLY the external Google Sheets database
- * No internal databases - everything comes from the external source
- * 
- * Uses fetch directly to Gemini API (no npm dependencies required)
- */
+// Serverless: Google Sheets CSV + Gemini Vision en UNA sola llamada
+// REQUISITO: el Sheet debe ser publico (Compartir > Cualquiera > Lector)
+const SHEET_ID = '1QLmkn8hfq_vkBv3IcaJNRI_ly6f5HorZ';
+const GID      = '2117305422';
 
-// Google Sheets CSV export URL
-const GOOGLE_SHEETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1QLmkn8hfq_vkBv3IcaJNRI_ly6f5HorZ/export?format=csv&gid=2117305422';
-
-// Gemini API endpoint
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
-
-/**
- * Fetch and parse Google Sheets database
- */
-async function obtenerBaseDatos() {
-    try {
-        const response = await fetch(GOOGLE_SHEETS_CSV_URL);
-        const csv = await response.text();
-        return parsearCSV(csv);
-    } catch (error) {
-        console.error('Error fetching database:', error);
-        return [];
+function parseCSV(text) {
+  var rows = [];
+  var lines = text.split('\n');
+  for (var li = 0; li < lines.length; li++) {
+    var line = lines[li];
+    if (!line.trim()) continue;
+    var cols = [], cur = '', inQ = false;
+    for (var i = 0; i < line.length; i++) {
+      if (line[i] === '"')           { inQ = !inQ; continue; }
+      if (line[i] === ',' && !inQ)   { cols.push(cur.trim()); cur = ''; continue; }
+      cur += line[i];
     }
+    cols.push(cur.trim());
+    rows.push(cols);
+  }
+  return rows;
 }
 
-/**
- * Parse CSV to ingredients array
- */
-function parsearCSV(csv) {
-    const lines = csv.trim().split('\n');
-    const ingredientes = [];
-    
-    // Skip header
-    for (let i = 1; i < lines.length; i++) {
-        const parts = parsearLineaCSV(lines[i]);
-        
-        if (parts.length >= 4) {
-            const categoria = parts[0].trim().toUpperCase();
-            const nombre = parts[1].trim();
-            const motivo = parts[2].trim();
-            const nocividad = parseInt(parts[3]) || 0;
-            
-            if (['ROJO', 'AMARILLO', 'VERDE'].includes(categoria) && nombre) {
-                ingredientes.push({
-                    categoria,
-                    nombre,
-                    motivo,
-                    nocividad
-                });
-            }
-        }
-    }
-    
-    return ingredientes;
-}
-
-/**
- * Parse CSV line handling quotes and commas
- */
-function parsearLineaCSV(line) {
-    const result = [];
-    let current = '';
-    let inQuotes = false;
-    
-    for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        
-        if (char === '"') {
-            inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
-            result.push(current);
-            current = '';
-        } else {
-            current += char;
-        }
-    }
-    
-    result.push(current);
-    return result;
-}
-
-/**
- * Extract text from image using Gemini Vision API (fetch)
- */
-async function extraerTextoDeImagen(base64Image) {
-    try {
-        const prompt = `IMPORTANTE: Extrae SOLO la lista de ingredientes de esta etiqueta de producto.
-Retorna UN ÚNICO objeto JSON válido con este formato exacto:
-{
-  "ingredientes": ["nombre1", "nombre2", "nombre3"],
-  "confianza": 0.95
-}
-
-Notas:
-- Incluye TODOS los ingredientes visibles
-- Usa nombres en ESPAÑOL cuando sea posible
-- No agregues explicaciones, solo JSON
-- Si no puedes ver ingredientes, retorna lista vacía: {"ingredientes": [], "confianza": 0}`;
-
-        const requestBody = {
-            contents: [
-                {
-                    parts: [
-                        {
-                            inlineData: {
-                                mimeType: 'image/jpeg',
-                                data: base64Image.replace(/^data:image\/\w+;base64,/, '')
-                            }
-                        },
-                        {
-                            text: prompt
-                        }
-                    ]
-                }
-            ]
-        };
-
-        const response = await fetch(GEMINI_API_URL + '?key=' + process.env.GOOGLE_API_KEY, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
-        });
-
-        if (!response.ok) {
-            throw new Error(`Gemini API error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-            return { ingredientes: [], confianza: 0 };
-        }
-
-        const text = data.candidates[0].content.parts[0].text;
-        
-        // Try to parse JSON from response
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            return JSON.parse(jsonMatch[0]);
-        }
-        
-        return { ingredientes: [], confianza: 0 };
-    } catch (error) {
-        console.error('Error extracting text:', error);
-        return { ingredientes: [], confianza: 0 };
-    }
-}
-
-/**
- * Classify ingredients against database
- */
-function clasificarIngredientes(nombresIngredientes, baseDatos) {
-    const resultados = [];
-    const ingredientesNoEncontrados = [];
-    
-    for (const nombre of nombresIngredientes) {
-        const termino = nombre.toLowerCase().trim();
-        
-        // Search in database
-        const encontrado = baseDatos.find(ing =>
-            ing.nombre.toLowerCase().includes(termino) ||
-            termino.includes(ing.nombre.toLowerCase())
-        );
-        
-        if (encontrado) {
-            resultados.push({
-                nombre: encontrado.nombre,
-                categoria: encontrado.categoria,
-                nocividad: encontrado.nocividad,
-                motivo: encontrado.motivo || ''
-            });
-        } else {
-            ingredientesNoEncontrados.push(nombre);
-        }
-    }
-    
-    return { clasificados: resultados, noEncontrados: ingredientesNoEncontrados };
-}
-
-/**
- * Determine overall semaforo color based on ingredients
- */
-function determinarSemaforo(ingredientes) {
-    if (ingredientes.length === 0) {
-        return { categoria: 'VERDE', mensaje: 'Sin ingredientes detectados' };
-    }
-    
-    // Check for ROJO (>30% nocividad or explicit ROJO category)
-    const tieneRojo = ingredientes.some(ing => 
-        ing.categoria === 'ROJO' || ing.nocividad > 30
-    );
-    
-    if (tieneRojo) {
-        return { 
-            categoria: 'ROJO', 
-            mensaje: 'Contiene químicos nocivos (>30% nocividad)' 
-        };
-    }
-    
-    // Check for AMARILLO
-    const tieneAmarillo = ingredientes.some(ing => ing.categoria === 'AMARILLO');
-    
-    if (tieneAmarillo) {
-        return { 
-            categoria: 'AMARILLO', 
-            mensaje: 'Contiene ingredientes que requieren precaución' 
-        };
-    }
-    
-    // All VERDE
-    return { 
-        categoria: 'VERDE', 
-        mensaje: 'Todos los ingredientes son seguros' 
-    };
-}
-
-/**
- * Main handler
- */
 export default async function handler(req, res) {
-    // CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+  res.setHeader('Access-Control-Allow-Origin',  '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
+
+  try {
+    var body = req.body;
+    if (!body.imageBase64) return res.status(400).json({ error: 'No se recibio imagen.' });
+
+    // 1 — Cargar lista de quimicos desde Google Sheets (exportacion CSV publica)
+    var csvUrl   = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/export?format=csv&gid=' + GID;
+    var sheetRes = await fetch(csvUrl);
+    if (!sheetRes.ok) throw new Error('No se pudo cargar el Sheet. Asegurate de que sea publico (vista).');
+
+    var rows      = parseCSV(await sheetRes.text());
+    var chemicals = rows.slice(1).map(function(r) {
+      return {
+        nombre:        (r[0] || '').trim(),
+        nocividad:     parseFloat((r[1] || '0').replace('%','').replace(',','.')),
+        clasificacion: (r[2] || '').trim()
+      };
+    }).filter(function(c) { return c.nombre.length > 0; });
+
+    if (!chemicals.length) throw new Error('Lista de quimicos vacia o inaccesible.');
+
+    // 2 — Construir lista para el prompt (sin template literals)
+    var chemicalsList = chemicals.map(function(c) {
+      return '- ' + c.nombre + ' | Nocividad: ' + c.nocividad + '% | Clasificacion: ' + c.clasificacion;
+    }).join('\n');
+
+    // 3 — Llamar a Gemini Vision API
+    var GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + process.env.GEMINI_API_KEY;
+
+    var prompt =
+      'Eres un analizador de ingredientes de productos de consumo.\n\n' +
+      'TAREA: Lee los ingredientes visibles en esta imagen y comparalos UNICAMENTE con la siguiente lista. NO uses conocimiento externo ni bases de datos propias.\n\n' +
+      'LISTA DE QUIMICOS (fuente unica autorizada):\n' + chemicalsList + '\n\n' +
+      'INSTRUCCIONES:\n' +
+      '1. Extrae TODOS los ingredientes visibles en la imagen.\n' +
+      '2. Compara cada uno SOLO contra la lista anterior.\n' +
+      '3. Reporta solo coincidencias encontradas en esa lista.\n' +
+      '4. Si un ingrediente NO esta en la lista, ignoralo.\n' +
+      '5. NO agregues quimicos que no esten en la lista provista.\n\n' +
+      'Responde UNICAMENTE con este JSON, sin texto adicional:\n' +
+      '{\n' +
+      '  "ingredientesLeidos": ["nombre1", "nombre2"],\n' +
+      '  "coincidencias": [\n' +
+      '    { "nombreDetectado": "texto imagen", "nombreLista": "texto lista", "nocividad": 45, "clasificacion": "texto" }\n' +
+      '  ],\n' +
+      '  "error": null\n' +
+      '}';
+
+    var geminiBody = {
+      contents: [{
+        parts: [
+          { text: prompt },
+          { inline_data: { mime_type: body.mimeType || 'image/jpeg', data: body.imageBase64 } }
+        ]
+      }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 1500 }
+    };
+
+    var gRes = await fetch(GEMINI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(geminiBody)
+    });
+
+    if (!gRes.ok) {
+      var errData = await gRes.json().catch(function() { return {}; });
+      throw new Error('Gemini error: ' + JSON.stringify(errData));
     }
-    
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-    
-    try {
-        const { imagen } = req.body;
-        
-        if (!imagen) {
-            return res.status(400).json({ error: 'No image provided' });
-        }
-        
-        // Extract base64 from data URL
-        const base64Image = imagen.includes('base64,') 
-            ? imagen.split('base64,')[1] 
-            : imagen;
-        
-        console.log('1. Extrayendo texto de imagen...');
-        const { ingredientes: nombresIngredientes, confianza } = await extraerTextoDeImagen(base64Image);
-        
-        console.log(`2. Ingredientes extraídos: ${nombresIngredientes.length}, Confianza: ${confianza}`);
-        
-        // Fetch database from Google Sheets
-        console.log('3. Cargando base de datos desde Google Sheets...');
-        const baseDatos = await obtenerBaseDatos();
-        console.log(`4. Base de datos cargada: ${baseDatos.length} ingredientes`);
-        
-        // Classify ingredients
-        console.log('5. Clasificando ingredientes...');
-        const { clasificados, noEncontrados } = clasificarIngredientes(nombresIngredientes, baseDatos);
-        
-        // Determine semaforo
-        const semaforo = determinarSemaforo(clasificados);
-        
-        // Log statistics
-        console.log(`6. Análisis completado:`);
-        console.log(`   - Clasificados: ${clasificados.length}`);
-        console.log(`   - No encontrados: ${noEncontrados.length}`);
-        console.log(`   - Semáforo: ${semaforo.categoria}`);
-        
-        // Return response
-        return res.status(200).json({
-            success: true,
-            ingredientes: clasificados,
-            noEncontrados,
-            semaforo,
-            confianza,
-            timestamp: new Date().toISOString(),
-            bdVersion: baseDatos.length
-        });
-        
-    } catch (error) {
-        console.error('Analysis error:', error);
-        return res.status(500).json({ 
-            error: 'Error during analysis',
-            details: error.message 
-        });
-    }
+
+    var gData  = await gRes.json();
+    var parts  = ((gData.candidates || [])[0] || {}).content && gData.candidates[0].content.parts;
+    var rawTxt = parts ? parts[0].text : '';
+    var clean  = rawTxt.replace(/```json|```/g, '').trim();
+    var result = JSON.parse(clean);
+
+    return res.status(200).json(result);
+
+  } catch (err) {
+    console.error('analyze error:', err.message);
+    return res.status(500).json({ error: err.message || 'Error al analizar.', ingredientesLeidos: [], coincidencias: [] });
+  }
 }
