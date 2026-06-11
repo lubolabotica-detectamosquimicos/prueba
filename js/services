@@ -1,0 +1,13 @@
+var API = {
+  analyze: function(imageBase64, mimeType) {
+    return fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: imageBase64, mimeType: mimeType || 'image/jpeg' })
+    }).then(function(res) {
+      if (!res.ok) return res.json().then(function(e) { throw new Error(e.error || 'Error en el analisis'); });
+      return res.json();
+    });
+  }
+};
+window.API = API;
