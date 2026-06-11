@@ -1,0 +1,59 @@
+var ScannerUI = {
+  isDragging: false, startX: 0, startY: 0,
+
+  init: function() {
+    var ov = document.getElementById('crop-overlay');
+    var cb = document.getElementById('crop-box');
+    var vp = document.getElementById('scanner-viewport');
+    ov.addEventListener('mousedown',  function(e) { ScannerUI._s(e, vp, cb); });
+    ov.addEventListener('mousemove',  function(e) { ScannerUI._m(e, vp, cb); });
+    ov.addEventListener('mouseup',    function(e) { ScannerUI._e(e, vp); });
+    ov.addEventListener('touchstart', function(e) { ScannerUI._s(e.touches[0], vp, cb); }, {passive:true});
+    ov.addEventListener('touchmove',  function(e) { ScannerUI._m(e.touches[0],  vp, cb); }, {passive:true});
+    ov.addEventListener('touchend',   function(e) { ScannerUI._e(e.changedTouches[0], vp); });
+  },
+
+  _p: function(e, el) {
+    var r = el.getBoundingClientRect();
+    return { x: Math.max(0, Math.min(e.clientX-r.left, r.width)), y: Math.max(0, Math.min(e.clientY-r.top, r.height)) };
+  },
+
+  _s: function(e, vp, cb) {
+    var p = ScannerUI._p(e, vp);
+    ScannerUI.isDragging = true; ScannerUI.startX = p.x; ScannerUI.startY = p.y;
+    cb.style.cssText = 'left:'+p.x+'px;top:'+p.y+'px;width:0;height:0;';
+  },
+
+  _m: function(e, vp, cb) {
+    if (!ScannerUI.isDragging) return;
+    var p = ScannerUI._p(e, vp);
+    var x = Math.min(p.x, ScannerUI.startX), y = Math.min(p.y, ScannerUI.startY);
+    cb.style.cssText = 'left:'+x+'px;top:'+y+'px;width:'+Math.abs(p.x-ScannerUI.startX)+'px;height:'+Math.abs(p.y-ScannerUI.startY)+'px;';
+  },
+
+  _e: function(e, vp) {
+    if (!ScannerUI.isDragging) return; ScannerUI.isDragging = false;
+    var p = ScannerUI._p(e, vp);
+    var w = Math.abs(p.x-ScannerUI.startX), h = Math.abs(p.y-ScannerUI.startY);
+    if (w > 20 && h > 20) {
+      ScannerModule.cropRect = { x:Math.min(p.x,ScannerUI.startX), y:Math.min(p.y,ScannerUI.startY), w:w, h:h };
+      document.getElementById('btn-analyze').disabled = false;
+    }
+  },
+
+  showCropMode: function() { document.getElementById('crop-overlay').hidden = false; },
+  hideCropMode: function() { document.getElementById('crop-overlay').hidden = true; ScannerModule.cropRect = null; },
+
+  showUploadedImage: function(src) {
+    var vp = document.getElementById('scanner-viewport');
+    var ex = vp.querySelector('.upload-preview'); if (ex) ex.remove();
+    var img = document.createElement('img');
+    img.className = 'upload-preview';
+    img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;';
+    img.src = src; vp.appendChild(img);
+    document.getElementById('scanner-placeholder').hidden = true;
+    document.getElementById('btn-analyze').disabled = false;
+    document.getElementById('btn-select-area').disabled = false;
+  }
+};
+window.ScannerUI = ScannerUI;
