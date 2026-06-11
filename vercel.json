@@ -1,51 +1,16 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/analizar.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/stats.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    }
-  ],
+  "builds": [{ "src": "api/*.js", "use": "@vercel/node" }],
   "routes": [
-    {
-      "src": "/api/analizar",
-      "dest": "/api/analizar.js"
-    },
-    {
-      "src": "/api/stats",
-      "dest": "/api/stats.js"
-    },
-    {
-      "src": "/css/(.*)",
-      "dest": "/css/$1"
-    },
-    {
-      "src": "/js/(.*)",
-      "dest": "/js/$1"
-    },
-    {
-      "src": "/data/(.*)",
-      "dest": "/data/$1"
-    },
-    {
-      "src": "/assets/(.*)",
-      "dest": "/assets/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)",     "dest": "/$1" }
   ],
-  "env": {
-    "GOOGLE_API_KEY": "@google_api_key",
-    "ADMIN_KEY": "@admin_key"
-  }
+  "headers": [{
+    "source": "/api/(.*)",
+    "headers": [
+      { "key": "Access-Control-Allow-Origin",  "value": "*" },
+      { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+      { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
+    ]
+  }]
 }
