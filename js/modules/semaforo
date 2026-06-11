@@ -1,0 +1,24 @@
+var SemaforoModule = {
+  UMBRAL_ROJO: 30,
+
+  evaluate: function(co) {
+    if (!co || !co.length) return 'verde';
+    for (var i = 0; i < co.length; i++) {
+      if (co[i].nocividad > SemaforoModule.UMBRAL_ROJO) return 'rojo';
+    }
+    return 'amarillo';
+  },
+
+  getConfig: function(estado) {
+    return {
+      verde:    { emoji:'&#10003;', titulo:'SIN QUIMICOS NOCIVOS', mensaje:'No se detectaron ingredientes nocivos en la lista de referencia.', clase:'verde' },
+      amarillo: { emoji:'&#9888;',  titulo:'PRECAUCION', mensaje:'Se detectaron ingredientes con niveles bajos de nocividad. Revisa los detalles.', clase:'amarillo' },
+      rojo:     { emoji:'&#128683;',titulo:'NO CONSUMIR', mensaje:'Se detecto al menos un quimico con nocividad mayor al 30%. Evita este producto.', clase:'rojo' }
+    }[estado] || { emoji:'&#10003;', titulo:'SIN QUIMICOS NOCIVOS', mensaje:'', clase:'verde' };
+  },
+
+  getBadgeClass: function(n) {
+    return n > 30 ? 'badge-rojo' : n > 10 ? 'badge-amarillo' : 'badge-verde';
+  }
+};
+window.SemaforoModule = SemaforoModule;
