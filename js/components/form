@@ -1,0 +1,17 @@
+var FormComponent = {
+  KEY: 'lubo_intro_done',
+  init: function() {
+    if (localStorage.getItem(FormComponent.KEY)) return;
+    var modal = document.getElementById('intro-modal');
+    var form  = document.getElementById('intro-form');
+    modal.hidden = false;
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true; btn.textContent = 'Enviando...';
+      fetch(form.action, { method:'POST', body:new FormData(form), headers:{Accept:'application/json'} })
+        .finally(function() { localStorage.setItem(FormComponent.KEY,'1'); modal.hidden = true; });
+    });
+  }
+};
+window.FormComponent = FormComponent;
