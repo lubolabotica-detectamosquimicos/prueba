@@ -1,0 +1,42 @@
+// Endpoint independiente — devuelve la lista de quimicos
+const SHEET_ID = '1QLmkn8hfq_vkBv3IcaJNRI_ly6f5HorZ';
+const GID      = '2117305422';
+
+function parseCSV(text) {
+  var rows = [];
+  var lines = text.split('\n');
+  for (var li = 0; li < lines.length; li++) {
+    var line = lines[li];
+    if (!line.trim()) continue;
+    var cols = [], cur = '', inQ = false;
+    for (var i = 0; i < line.length; i++) {
+      if (line[i] === '"')           { inQ = !inQ; continue; }
+      if (line[i] === ',' && !inQ)   { cols.push(cur.trim()); cur = ''; continue; }
+      cur += line[i];
+    }
+    cols.push(cur.trim());
+    rows.push(cols);
+  }
+  return rows;
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  try {
+    var csvUrl = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/export?format=csv&gid=' + GID;
+    var r = await fetch(csvUrl);
+    if (!r.ok) throw new Error('Sheet inaccesible.');
+    var rows = parseCSV(await r.text());
+    var chemicals = rows.slice(1).map(function(row) {
+      return {
+        nombre: (row[0] || '').trim(),
+        nocividad: parseFloat((row[1] || '0').replace('%','').replace(',','.')),
+        clasificacion: (row[2] || '').trim()
+      };
+    }).filter(function(c) { return c.nombre.length > 0; });
+    return res.status(200).json({ chemicals: chemicals });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
