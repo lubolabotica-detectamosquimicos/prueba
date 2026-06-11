@@ -1,0 +1,63 @@
+var App = {
+  init: function() {
+    FormComponent.init();
+    ScannerUI.init();
+    var btnCam = document.getElementById('btn-start-camera');
+    var btnSel = document.getElementById('btn-select-area');
+    var btnAna = document.getElementById('btn-analyze');
+    var btnUp  = document.getElementById('btn-upload');
+    var fInp   = document.getElementById('file-input');
+    var ph     = document.getElementById('scanner-placeholder');
+
+    function startCam() {
+      return ScannerModule.startCamera()
+        .then(function() { btnCam.disabled=true; btnSel.disabled=false; btnAna.disabled=false; })
+        .catch(function(e) { Modal.show(e.message,'error'); });
+    }
+
+    btnCam.addEventListener('click', startCam);
+    ph.addEventListener('click', startCam);
+    btnSel.addEventListener('click', function() { ScannerUI.showCropMode(); Modal.show('Dibuja un recuadro sobre los ingredientes'); });
+    btnAna.addEventListener('click', function() { App.analyze(); });
+    btnUp.addEventListener('click', function() { fInp.click(); });
+    fInp.addEventListener('change', function(e) {
+      var f = e.target.files[0]; if (!f) return;
+      ScannerModule.loadImageFile(f)
+        .then(function(d) { ScannerModule.imageData=d; ScannerUI.showUploadedImage(d); Modal.show('Imagen cargada. Presiona Analizar.','success'); })
+        .catch(function() { Modal.show('No se pudo cargar la imagen.','error'); });
+    });
+  },
+
+  analyze: function() {
+    var loading = document.getElementById('loading-overlay');
+    loading.hidden = false; SemaforoUI.hide(); ScannerUI.hideCropMode();
+    var dataURL;
+    try {
+      if (ScannerModule.imageData)  dataURL = ScannerModule.imageData;
+      else if (ScannerModule.stream) dataURL = ScannerModule.cropRect ? ScannerModule.captureWithCrop() : ScannerModule.captureFullFrame();
+      else throw new Error('Activa la camara o sube una imagen primero.');
+    } catch(e) { loading.hidden=true; Modal.show(e.message,'error'); return; }
+
+    API.analyze(ScannerModule.toBase64(dataURL), 'image/jpeg')
+      .then(function(r) { SemaforoUI.render(r); ScannerModule.stopCamera(); })
+      .catch(function(e) { Modal.show(e.message||'Error al analizar','error'); })
+      .finally(function() { loading.hidden=true; });
+  },
+
+  reset: function() {
+    ScannerModule.stopCamera(); ScannerModule.imageData=null; ScannerModule.cropRect=null;
+    SemaforoUI.hide(); ScannerUI.hideCropMode();
+    var vp=document.getElementById('scanner-viewport');
+    var pr=vp.querySelector('.upload-preview'); if(pr) pr.remove();
+    document.getElementById('scanner-placeholder').hidden=false;
+    document.getElementById('scanner-video').srcObject=null;
+    document.getElementById('btn-start-camera').disabled=false;
+    document.getElementById('btn-select-area').disabled=true;
+    document.getElementById('btn-analyze').disabled=true;
+    document.getElementById('file-input').value='';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+};
+
+document.addEventListener('DOMContentLoaded', function() { App.init(); });
+window.App = App;
